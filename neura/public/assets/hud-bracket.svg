@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 420" role="img" aria-label="">
+  <!-- Moldura HUD lateral (versão esquerda; espelhar por CSS para a direita) -->
+  <g fill="none" stroke="#e8412f" stroke-width="3">
+
+    <!-- coluna de segmentos inclinados -->
+    <g fill="#e8412f" stroke="none">
+      <path d="M56,40  l18,0 l-8,26 l-18,0 z"/>
+      <path d="M56,76  l18,0 l-8,26 l-18,0 z"/>
+      <path d="M56,112 l18,0 l-8,26 l-18,0 z"/>
+      <path d="M56,148 l18,0 l-8,26 l-18,0 z"/>
+      <path d="M56,184 l18,0 l-8,26 l-18,0 z"/>
+      <path d="M56,220 l18,0 l-8,26 l-18,0 z"/>
+    </g>
+
+    <!-- haste vertical + nó -->
+    <path d="M40,52 L40,268 L96,330"/>
+    <circle cx="40" cy="46" r="5" fill="#e8412f" stroke="none"/>
+
+    <!-- linha horizontal inferior + nó -->
+    <path d="M96,330 L206,330"/>
+    <circle cx="212" cy="330" r="5" fill="#e8412f" stroke="none"/>
+
+    <!-- cantoneira angular grossa -->
+    <path d="M18,262 L18,368 L112,368" stroke-width="5"/>
+    <path d="M6,300 L6,384 L128,384" stroke-width="3" opacity=".7"/>
+
+    <!-- bandeira sólida do canto -->
+    <path d="M18,336 L58,376 L18,376 Z" fill="#e8412f" stroke="none" opacity=".9"/>
+
+    <!-- traços inclinados na base -->
+    <g fill="#e8412f" stroke="none">
+      <path d="M78,372  l22,0 l-10,22 l-22,0 z"/>
+      <path d="M108,372 l22,0 l-10,22 l-22,0 z"/>
+      <path d="M138,372 l22,0 l-10,22 l-22,0 z"/>
+      <path d="M168,372 l22,0 l-10,22 l-22,0 z"/>
+    </g>
+
+  </g>
+</svg>

@@ -1,0 +1,18 @@
+node_modules/
+.next/
+out/
+build/
+
+# segredos — nunca versionar
+.env
+.env.local
+.env*.local
+
+# banco de dados
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+.DS_Store
+*.log
+npm-debug.log*

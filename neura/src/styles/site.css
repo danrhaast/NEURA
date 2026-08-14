@@ -1,0 +1,462 @@
+/* ==========================================================================
+   SITE.CSS — estilos de página da Neura
+   Depende de neura.css (tokens + componentes)
+   ========================================================================== */
+
+
+/* ==========================================================================
+   NAVEGAÇÃO
+   ========================================================================== */
+
+.nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  height: var(--n-nav-h);
+  background: rgba(13,13,13,.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--n-normal), background var(--n-normal);
+}
+
+.nav.is-scrolled { border-bottom-color: var(--n-line); background: rgba(13,13,13,.96); }
+
+.nav__inner {
+  height: 100%;
+  max-width: 1400px;
+  margin-inline: auto;
+  padding-inline: var(--n-s-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--n-s-5);
+}
+
+.nav__logo img { width: 118px; }
+.nav__logo { flex-shrink: 0; transition: opacity var(--n-fast); }
+.nav__logo:hover { opacity: .75; }
+
+.nav__list { display: flex; align-items: center; gap: clamp(1rem, 2.4vw, 2.6rem); }
+
+.nav__link {
+  position: relative;
+  font-family: var(--n-font-head);
+  font-weight: 400;
+  font-size: var(--n-t-sm);
+  color: var(--n-white);
+  padding-block: var(--n-s-2);
+  white-space: nowrap;
+  transition: color var(--n-fast);
+}
+
+.nav__link::after {
+  content: "";
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 100%; height: 2px;
+  background: var(--n-violet);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--n-normal) var(--n-ease-out);
+}
+
+.nav__link:hover        { color: var(--n-violet-lt); }
+.nav__link:hover::after,
+.nav__link.is-active::after { transform: scaleX(1); }
+.nav__link.is-active    { color: var(--n-violet-lt); }
+
+.nav__right { display: flex; align-items: center; gap: var(--n-s-4); }
+
+/* botão hambúrguer */
+.nav__toggle {
+  display: none;
+  width: 42px; height: 42px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 8px;
+}
+
+.nav__toggle span {
+  display: block;
+  height: 2px;
+  background: var(--n-white);
+  transition: transform var(--n-normal) var(--n-ease), opacity var(--n-fast);
+}
+
+.nav__toggle.is-open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav__toggle.is-open span:nth-child(2) { opacity: 0; }
+.nav__toggle.is-open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+
+.hero {
+  min-height: 100svh;
+  padding-top: var(--n-nav-h);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: rgb(9, 9, 9);
+}
+
+/* molduras HUD vermelhas nas laterais */
+.hero__hud {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: clamp(120px, 16vw, 230px);
+  opacity: .95;
+  pointer-events: none;
+}
+
+.hero__hud--left  { left: clamp(8px, 3vw, 60px); }
+.hero__hud--right { right: clamp(8px, 3vw, 60px); transform: translateY(-50%) scaleX(-1); }
+
+/* painel central */
+.hero__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding-top: var(--n-s-5);
+  padding-bottom: 96px; /* espaço reservado para o indicador de rolagem */
+}
+
+.hero__art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(56vw, 520px);
+  aspect-ratio: 4 / 5;
+  background: #060606;
+}
+
+/* a arte da rosa já vem com fundo preto — preenche o painel inteiro */
+.hero__rose {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* o emblema tem margem interna própria, por isso passa de 100% */
+.hero__emblem {
+  position: relative;
+  width: 116%;
+  max-width: none;
+  z-index: 2;
+  filter: drop-shadow(0 6px 34px rgba(0,0,0,.9));
+}
+
+/* indicador de rolagem */
+.hero__scroll {
+  position: absolute;
+  bottom: var(--n-s-5);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: grid;
+  justify-items: center;
+  gap: var(--n-s-2);
+  color: var(--n-muted);
+  transition: color var(--n-fast);
+}
+
+.hero__scroll:hover { color: var(--n-red); }
+
+.hero__scroll i {
+  display: block;
+  width: 1px; height: 34px;
+  background: linear-gradient(var(--n-red), transparent);
+  animation: heroScroll 1.9s var(--n-ease) infinite;
+}
+
+@keyframes heroScroll {
+  0%   { transform: scaleY(.2); transform-origin: top; opacity: 0; }
+  40%  { transform: scaleY(1);  transform-origin: top; opacity: 1; }
+  70%  { transform: scaleY(1);  transform-origin: bottom; opacity: 1; }
+  100% { transform: scaleY(.2); transform-origin: bottom; opacity: 0; }
+}
+
+
+/* ==========================================================================
+   SHOWS
+   ========================================================================== */
+
+#shows { background: var(--n-ink); }
+
+#shows .n-title { font-weight: 500; }
+
+
+/* ==========================================================================
+   SOBRE NÓS
+   ========================================================================== */
+
+.about {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  align-items: center;
+}
+
+.about__photo {
+  display: grid;
+  place-items: center;
+  min-height: 300px;
+  font-family: var(--n-font-head);
+  font-weight: 300;
+  font-size: var(--n-t-lg);
+  color: var(--n-white);
+  text-align: center;
+}
+
+/* substituir o placeholder por uma imagem real:
+   trocar o <span> por <img class="about__img" src="..."> */
+.about__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+.about__text .n-body { text-align: justify; }
+
+
+/* ==========================================================================
+   POEMAS
+   ========================================================================== */
+
+.poemas { background: var(--n-void); overflow: hidden; }
+
+.poemas__bg {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(120%, 1100px);
+  opacity: .22;
+  pointer-events: none;
+}
+
+.poema {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--n-s-4);
+  width: clamp(230px, 26vw, 296px);
+  min-height: 336px;
+  padding: var(--n-s-6);
+  background: var(--n-violet);
+  border-radius: 26px;
+  color: #fff;
+  overflow: hidden;
+  transition: transform var(--n-normal) var(--n-ease-out), box-shadow var(--n-normal);
+}
+
+.poema:hover,
+.poema:focus-visible {
+  transform: translateY(-6px);
+  box-shadow: 0 20px 50px -18px rgba(106,47,245,.8);
+}
+
+.poema__title {
+  font-family: var(--n-font-head);
+  font-weight: 600;
+  font-size: var(--n-t-md);
+  letter-spacing: .02em;
+}
+
+.poema__body {
+  font-family: var(--n-font-body);
+  font-size: var(--n-t-sm);
+  line-height: 1.9;
+  color: rgba(255,255,255,.94);
+}
+
+.poema__num {
+  position: absolute;
+  right: 18px; bottom: 8px;
+  font-family: var(--n-font-head);
+  font-weight: 700;
+  font-size: 4.5rem;
+  line-height: 1;
+  color: rgba(255,255,255,.14);
+  pointer-events: none;
+}
+
+
+/* ==========================================================================
+   LORE
+   ========================================================================== */
+
+.lore { background: var(--n-void); }
+
+.lore__text p {
+  font-family: var(--n-font-body);
+  font-size: var(--n-t-base);
+  line-height: 1.95;
+  color: var(--n-text);
+  margin-bottom: var(--n-s-5);
+}
+
+.lore__accent { color: var(--n-white); }
+
+.lore__final {
+  font-family: var(--n-font-head);
+  font-weight: 500;
+  font-size: var(--n-t-md);
+  color: var(--n-white);
+}
+
+
+/* ==========================================================================
+   VÍDEOS
+   ========================================================================== */
+
+.videos {
+  display: grid;
+  gap: var(--n-s-5);
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.video { display: block; }
+
+.video__thumb {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
+  background:
+    linear-gradient(150deg, var(--n-panel-2), var(--n-void));
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+  overflow: hidden;
+  transition: border-color var(--n-normal), transform var(--n-normal) var(--n-ease-out);
+}
+
+.video:hover .video__thumb {
+  border-color: var(--n-violet);
+  transform: translateY(-4px);
+}
+
+/* miniatura vinda do YouTube */
+.video__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: .62;
+  transition: opacity var(--n-normal), transform var(--n-normal) var(--n-ease-out);
+}
+
+.video:hover .video__img { opacity: .85; transform: scale(1.04); }
+
+.video__play {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 58px; height: 58px;
+  padding-left: 4px;
+  border: 2px solid var(--n-red);
+  border-radius: 50%;
+  color: var(--n-white);
+  font-size: 18px;
+  transition: background var(--n-fast), box-shadow var(--n-fast);
+}
+
+.video:hover .video__play { background: var(--n-red); box-shadow: var(--n-glow-red); }
+
+.video__title {
+  margin-top: var(--n-s-4);
+  font-family: var(--n-font-head);
+  font-weight: 500;
+  font-size: var(--n-t-md);
+  color: var(--n-white);
+}
+
+
+/* ==========================================================================
+   REDES
+   ========================================================================== */
+
+.redes__list {
+  display: flex;
+  justify-content: center;
+  gap: var(--n-s-5);
+}
+
+
+/* ==========================================================================
+   RODAPÉ
+   ========================================================================== */
+
+.footer {
+  border-top: 1px solid var(--n-line);
+  padding-block: var(--n-s-6);
+  background: var(--n-void);
+}
+
+.footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--n-s-5);
+  flex-wrap: wrap;
+}
+
+.footer__logo { width: 96px; opacity: .8; }
+
+.footer__top { transition: color var(--n-fast); }
+.footer__top:hover { color: var(--n-red); }
+
+
+/* ==========================================================================
+   RESPONSIVO
+   ========================================================================== */
+
+@media (max-width: 980px) {
+
+  .nav__toggle { display: flex; }
+
+  .nav__menu {
+    position: fixed;
+    inset: var(--n-nav-h) 0 auto 0;
+    background: rgba(13,13,13,.98);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--n-line);
+    padding: var(--n-s-6) var(--n-s-6) var(--n-s-7);
+    transform: translateY(-12px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--n-normal), transform var(--n-normal), visibility var(--n-normal);
+  }
+
+  .nav__menu.is-open { opacity: 1; visibility: visible; transform: none; }
+
+  .nav__list { flex-direction: column; align-items: flex-start; gap: var(--n-s-4); }
+  .nav__link { font-size: var(--n-t-lg); }
+
+  .about { grid-template-columns: 1fr; }
+  .about__text .n-body { text-align: left; }
+
+  .hero__art { width: min(72vw, 440px); }
+  .hero__hud { width: clamp(84px, 14vw, 140px); opacity: .7; }
+}
+
+@media (max-width: 620px) {
+  .nav__inner { padding-inline: var(--n-s-4); }
+  .nav__logo img { width: 96px; }
+
+  /* sem espaço lateral para as molduras HUD — o emblema fica sozinho */
+  .hero__hud { display: none; }
+  .hero__art { width: 84vw; }
+
+  .poema { width: 78vw; min-height: 260px; }
+
+  .footer__inner { justify-content: center; text-align: center; }
+}

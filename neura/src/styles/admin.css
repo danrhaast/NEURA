@@ -1,0 +1,423 @@
+/* ==========================================================================
+   ADMIN.CSS — painel de conteúdo
+   Depende de neura.css (tokens + componentes)
+   ========================================================================== */
+
+.admin { background: var(--n-ink); }
+
+/* o painel ocupa a tela inteira e traz o próprio fundo */
+.panel { min-height: 100vh; background: var(--n-ink); }
+
+.carregando {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  background: var(--n-void);
+  color: var(--n-muted);
+}
+
+
+/* --- controle deslizante (progresso dos shows) --------------------------- */
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-5);
+  padding: var(--n-s-5);
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+}
+
+.slider__range {
+  flex: 1;
+  height: 6px;
+  appearance: none;
+  background: var(--n-void);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-pill);
+  outline-offset: 4px;
+}
+
+.slider__range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px; height: 20px;
+  background: var(--n-violet);
+  border: 2px solid var(--n-white);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider__range::-moz-range-thumb {
+  width: 20px; height: 20px;
+  background: var(--n-violet);
+  border: 2px solid var(--n-white);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider__val {
+  min-width: 4ch;
+  font-family: var(--n-font-head);
+  font-weight: 700;
+  font-size: var(--n-t-lg);
+  color: var(--n-white);
+  text-align: right;
+}
+
+
+/* ==========================================================================
+   TRAVA DE ACESSO
+   ========================================================================== */
+
+.gate {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  place-items: center;
+  padding: var(--n-s-5);
+  background: var(--n-void);
+}
+
+.gate.is-out { display: none; }
+
+.gate__box {
+  width: 100%;
+  max-width: 360px;
+  padding: var(--n-s-6);
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+}
+
+.gate__logo { width: 110px; margin: 0 auto var(--n-s-5); }
+.gate__label { display: block; text-align: center; margin-bottom: var(--n-s-6); }
+
+.gate__err {
+  min-height: 1.4em;
+  margin-top: var(--n-s-3);
+  font-family: var(--n-font-hud);
+  font-size: var(--n-t-xs);
+  color: var(--n-red);
+  text-align: center;
+}
+
+.gate__warn {
+  margin-top: var(--n-s-5);
+  padding-top: var(--n-s-4);
+  border-top: 1px solid var(--n-line);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--n-dim);
+}
+
+
+/* ==========================================================================
+   BARRA SUPERIOR
+   ========================================================================== */
+
+.abar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--n-s-4);
+  flex-wrap: wrap;
+  padding: var(--n-s-4) var(--n-s-6);
+  background: rgba(13,13,13,.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--n-line);
+}
+
+.abar__left  { display: flex; align-items: center; gap: var(--n-s-4); }
+.abar__right { display: flex; align-items: center; gap: var(--n-s-3); flex-wrap: wrap; }
+.abar__logo  { width: 92px; }
+
+.abar__state { color: var(--n-dim); }
+.abar__state.is-dirty { color: var(--n-red); }
+
+
+/* ==========================================================================
+   ESTRUTURA
+   ========================================================================== */
+
+.awrap {
+  max-width: 900px;
+  margin-inline: auto;
+  padding: var(--n-s-7) var(--n-s-5) var(--n-s-9);
+}
+
+.asec {
+  margin-top: var(--n-s-7);
+  padding-top: var(--n-s-6);
+  border-top: 1px solid var(--n-line);
+}
+
+.asec__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--n-s-4);
+  flex-wrap: wrap;
+  margin-bottom: var(--n-s-5);
+}
+
+.asec__title {
+  font-family: var(--n-font-head);
+  font-weight: 500;
+  font-size: var(--n-t-lg);
+  color: var(--n-white);
+}
+
+.asec__hint {
+  margin-top: var(--n-s-2);
+  font-size: var(--n-t-sm);
+  color: var(--n-muted);
+  max-width: 60ch;
+}
+
+.asec__hint code,
+.steps code {
+  padding: 1px 6px;
+  background: var(--n-void);
+  border: 1px solid var(--n-line);
+  border-radius: 3px;
+  font-family: var(--n-font-hud);
+  font-size: .9em;
+  color: var(--n-violet-lt);
+}
+
+
+/* --- instruções --------------------------------------------------------- */
+
+.steps {
+  padding: var(--n-s-5);
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-left: 3px solid var(--n-violet);
+  border-radius: var(--n-r-md);
+}
+
+.steps__list {
+  margin-top: var(--n-s-4);
+  padding-left: var(--n-s-5);
+  list-style: decimal;
+  color: var(--n-text);
+}
+
+.steps__list li { margin-bottom: var(--n-s-2); }
+.steps__list strong { color: var(--n-white); }
+
+.steps__note {
+  margin-top: var(--n-s-4);
+  font-size: var(--n-t-sm);
+  color: var(--n-muted);
+}
+
+
+/* --- abas ---------------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: var(--n-s-2);
+  margin-top: var(--n-s-6);
+  border-bottom: 1px solid var(--n-line);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-2);
+  padding: var(--n-s-3) var(--n-s-5);
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font-family: var(--n-font-head);
+  font-size: var(--n-t-sm);
+  color: var(--n-muted);
+  transition: color var(--n-fast), border-color var(--n-fast);
+}
+
+.tab:hover { color: var(--n-white); }
+.tab.is-active { color: var(--n-white); border-bottom-color: var(--n-violet); }
+
+.tab__n {
+  min-width: 22px;
+  padding: 1px 6px;
+  background: var(--n-panel-2);
+  border-radius: var(--n-r-pill);
+  font-family: var(--n-font-hud);
+  font-size: 10px;
+  text-align: center;
+}
+
+.tab.is-active .tab__n { background: var(--n-violet); color: #fff; }
+
+
+/* ==========================================================================
+   ITENS EDITÁVEIS
+   ========================================================================== */
+
+.items { display: grid; gap: var(--n-s-4); }
+
+.item {
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+  overflow: hidden;
+  transition: border-color var(--n-fast);
+}
+
+.item:focus-within { border-color: var(--n-violet); }
+
+.item__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-3);
+  padding: var(--n-s-3) var(--n-s-4);
+  background: var(--n-panel-2);
+  border-bottom: 1px solid var(--n-line);
+}
+
+.item__num {
+  display: grid;
+  place-items: center;
+  width: 26px; height: 26px;
+  background: var(--n-violet);
+  border-radius: var(--n-r-sm);
+  font-family: var(--n-font-hud);
+  font-size: 11px;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.item__name {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--n-font-head);
+  font-size: var(--n-t-sm);
+  color: var(--n-white);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item__acts { display: flex; gap: 4px; flex-shrink: 0; }
+
+.iact {
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-sm);
+  color: var(--n-muted);
+  font-size: 13px;
+  line-height: 1;
+  transition: all var(--n-fast);
+}
+
+.iact:hover:not(:disabled) { border-color: var(--n-violet); color: var(--n-white); }
+.iact:disabled { opacity: .28; cursor: not-allowed; }
+.iact--del:hover { border-color: var(--n-red); color: var(--n-red); }
+
+.item__body { padding: var(--n-s-5); display: grid; gap: var(--n-s-4); }
+
+.field2 { display: grid; gap: var(--n-s-4); grid-template-columns: 1fr 1fr; }
+
+.item__body textarea.n-input { min-height: 158px; font-family: var(--n-font-body); line-height: 1.8; }
+
+.help {
+  margin-top: var(--n-s-2);
+  font-size: 11px;
+  color: var(--n-dim);
+}
+
+.help--ok  { color: var(--n-violet-lt); }
+.help--bad { color: var(--n-red); }
+
+.empty {
+  padding: var(--n-s-6);
+  text-align: center;
+  color: var(--n-dim);
+  border: 1px dashed var(--n-line);
+  border-radius: var(--n-r-md);
+}
+
+
+/* --- prévia do vídeo ------------------------------------------------------ */
+
+.vprev {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-4);
+  padding: var(--n-s-3);
+  background: var(--n-void);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-sm);
+}
+
+.vprev img {
+  width: 116px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.vprev__none {
+  width: 116px;
+  aspect-ratio: 16/9;
+  display: grid;
+  place-items: center;
+  background: var(--n-panel-2);
+  border-radius: 3px;
+  font-size: 11px;
+  color: var(--n-dim);
+  flex-shrink: 0;
+}
+
+
+/* --- zona de reversão ------------------------------------------------------ */
+
+.danger { border-top-color: rgba(232,65,47,.35); }
+
+
+/* ==========================================================================
+   TOAST
+   ========================================================================== */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: var(--n-s-6);
+  transform: translate(-50%, 20px);
+  z-index: 400;
+  padding: var(--n-s-3) var(--n-s-5);
+  background: var(--n-white);
+  color: var(--n-void);
+  border-radius: var(--n-r-sm);
+  font-family: var(--n-font-hud);
+  font-size: var(--n-t-xs);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--n-normal), transform var(--n-normal), visibility var(--n-normal);
+}
+
+.toast.is-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+.toast.is-bad { background: var(--n-red); color: #fff; }
+
+
+/* ==========================================================================
+   RESPONSIVO
+   ========================================================================== */
+
+@media (max-width: 700px) {
+  .abar { padding: var(--n-s-3) var(--n-s-4); }
+  .abar__right { width: 100%; justify-content: space-between; }
+  .field2 { grid-template-columns: 1fr; }
+  .awrap { padding-inline: var(--n-s-4); }
+}

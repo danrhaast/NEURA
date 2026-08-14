@@ -1,0 +1,4 @@
+/* Folhas de estilo do projeto — o mini-framework continua sendo CSS puro. */
+@import '../styles/neura.css';
+@import '../styles/site.css';
+@import '../styles/admin.css';
