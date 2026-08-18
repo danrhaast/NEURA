@@ -43,9 +43,10 @@
   --n-dim:    #5a5a5a;
 
   /* --- Tipografia --- */
-  --n-font-head: 'Poppins', 'Segoe UI', system-ui, sans-serif;
-  --n-font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --n-font-hud:  'Chakra Petch', 'Consolas', monospace;
+  /* As variáveis --n-fonte-* vêm do next/font (ver src/app/layout.jsx). */
+  --n-font-head: var(--n-fonte-head), 'Segoe UI', system-ui, sans-serif;
+  --n-font-body: var(--n-fonte-body), 'Segoe UI', system-ui, sans-serif;
+  --n-font-hud:  var(--n-fonte-hud), 'Consolas', monospace;
 
   --n-t-xs:   0.75rem;
   --n-t-sm:   0.875rem;

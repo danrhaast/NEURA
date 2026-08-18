@@ -10,7 +10,7 @@ export default function Hero() {
       <div className="hero__stage">
         <div className="hero__art">
           <img
-            src="/assets/rose.png"
+            src="/assets/rose.webp"
             alt=""
             className="hero__rose"
             width={640}

@@ -3,7 +3,7 @@
    PUT  /api/conteudo   → grava tudo de uma vez (exige sessão)
    ========================================================================== */
 
-import { lerConteudo, salvarPoemas, salvarVideos, gravarConfig } from '@/lib/db';
+import { lerConteudo, salvarConteudo } from '@/lib/db';
 import { autenticado, naoAutorizado } from '@/lib/auth';
 
 export const runtime = 'nodejs';
@@ -39,15 +39,7 @@ export async function PUT(req) {
   }
 
   try {
-    salvarPoemas(poemas);
-    salvarVideos(videos);
-
-    if (progressoShows !== undefined) {
-      const n = Math.max(0, Math.min(100, Math.round(Number(progressoShows) || 0)));
-      gravarConfig('progresso_shows', n);
-    }
-
-    return Response.json({ ok: true, ...lerConteudo() });
+    return Response.json({ ok: true, ...salvarConteudo({ poemas, videos, progressoShows }) });
   } catch (e) {
     console.error('PUT /api/conteudo', e);
     return Response.json({ erro: 'Falha ao gravar' }, { status: 500 });

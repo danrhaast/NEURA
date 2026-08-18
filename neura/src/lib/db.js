@@ -61,21 +61,34 @@ const VIDEOS_INICIAIS = [
   ['Bastidores',   'Estúdio',          ''],
 ];
 
+/* BEGIN IMMEDIATE pega a trava de escrita ANTES de contar as linhas. Durante o
+   `next build` vários processos worker importam este módulo ao mesmo tempo; sem
+   a trava os dois leem "0 poemas" e semeiam em paralelo — um ganha, o outro
+   estoura SQLITE_BUSY e derruba o build. Com ela o segundo espera, encontra as
+   tabelas já populadas e não faz nada. */
 function semear(d) {
-  const nPoemas = d.prepare('SELECT COUNT(*) AS n FROM poemas').get().n;
-  if (nPoemas === 0) {
-    const ins = d.prepare('INSERT INTO poemas (titulo, texto, ordem) VALUES (?, ?, ?)');
-    POEMAS_INICIAIS.forEach(([t, x], i) => ins.run(t, x, i));
-  }
+  d.exec('BEGIN IMMEDIATE');
+  try {
+    const nPoemas = d.prepare('SELECT COUNT(*) AS n FROM poemas').get().n;
+    if (nPoemas === 0) {
+      const ins = d.prepare('INSERT INTO poemas (titulo, texto, ordem) VALUES (?, ?, ?)');
+      POEMAS_INICIAIS.forEach(([t, x], i) => ins.run(t, x, i));
+    }
 
-  const nVideos = d.prepare('SELECT COUNT(*) AS n FROM videos').get().n;
-  if (nVideos === 0) {
-    const ins = d.prepare('INSERT INTO videos (titulo, legenda, youtube, ordem) VALUES (?, ?, ?, ?)');
-    VIDEOS_INICIAIS.forEach(([t, l, y], i) => ins.run(t, l, y, i));
-  }
+    const nVideos = d.prepare('SELECT COUNT(*) AS n FROM videos').get().n;
+    if (nVideos === 0) {
+      const ins = d.prepare('INSERT INTO videos (titulo, legenda, youtube, ordem) VALUES (?, ?, ?, ?)');
+      VIDEOS_INICIAIS.forEach(([t, l, y], i) => ins.run(t, l, y, i));
+    }
 
-  if (!d.prepare('SELECT 1 FROM config WHERE chave = ?').get('progresso_shows')) {
-    d.prepare('INSERT INTO config (chave, valor) VALUES (?, ?)').run('progresso_shows', '0');
+    if (!d.prepare('SELECT 1 FROM config WHERE chave = ?').get('progresso_shows')) {
+      d.prepare('INSERT INTO config (chave, valor) VALUES (?, ?)').run('progresso_shows', '0');
+    }
+
+    d.exec('COMMIT');
+  } catch (e) {
+    d.exec('ROLLBACK');
+    throw e;
   }
 }
 
@@ -86,7 +99,11 @@ function semear(d) {
 
 if (!db) {
   mkdirSync(DIR, { recursive: true });
-  db = new DatabaseSync(FILE);
+  // timeout: espera a trava liberar em vez de falhar na hora. O padrão do
+  // node:sqlite é 0 — o concorrente recebe "database is locked" já na primeira
+  // tentativa, o que quebrava o `next build` num diretório limpo.
+  db = new DatabaseSync(FILE, { timeout: 5000 });
+
   db.exec('PRAGMA journal_mode = WAL');
   db.exec('PRAGMA foreign_keys = ON');
   criarTabelas(db);
@@ -149,37 +166,43 @@ function limpar(v, max) {
   return String(v ?? '').trim().slice(0, max);
 }
 
-export function salvarPoemas(lista) {
+/* Estas duas NÃO abrem transação — quem abre é `salvarConteudo`, que envolve
+   as duas listas e o progresso numa transação só. Antes cada uma tinha a sua:
+   se a gravação dos vídeos falhasse, os poemas já estavam publicados e o site
+   ficava com metade da edição no ar. */
+
+function gravarPoemas(lista) {
   const gravar = db.prepare('INSERT INTO poemas (titulo, texto, ordem) VALUES (?, ?, ?)');
-
-  db.exec('BEGIN');
-  try {
-    db.exec('DELETE FROM poemas');
-    lista.forEach((p, i) => gravar.run(limpar(p.titulo, 80), limpar(p.texto, 2000), i));
-    db.exec('COMMIT');
-  } catch (e) {
-    db.exec('ROLLBACK');
-    throw e;
-  }
-
-  return listarPoemas();
+  db.exec('DELETE FROM poemas');
+  lista.forEach((p, i) => gravar.run(limpar(p.titulo, 80), limpar(p.texto, 2000), i));
 }
 
-export function salvarVideos(lista) {
+function gravarVideos(lista) {
   const gravar = db.prepare('INSERT INTO videos (titulo, legenda, youtube, ordem) VALUES (?, ?, ?, ?)');
+  db.exec('DELETE FROM videos');
+  lista.forEach((v, i) =>
+    gravar.run(limpar(v.titulo, 80), limpar(v.legenda, 60), limpar(v.youtube, 300), i));
+}
 
-  db.exec('BEGIN');
+/** Publica a edição inteira de uma vez. Ou entra tudo, ou não entra nada. */
+export function salvarConteudo({ poemas, videos, progressoShows }) {
+  db.exec('BEGIN IMMEDIATE');
   try {
-    db.exec('DELETE FROM videos');
-    lista.forEach((v, i) =>
-      gravar.run(limpar(v.titulo, 80), limpar(v.legenda, 60), limpar(v.youtube, 300), i));
+    gravarPoemas(poemas);
+    gravarVideos(videos);
+
+    if (progressoShows !== undefined) {
+      const n = Math.max(0, Math.min(100, Math.round(Number(progressoShows) || 0)));
+      gravarConfig('progresso_shows', n);
+    }
+
     db.exec('COMMIT');
   } catch (e) {
     db.exec('ROLLBACK');
     throw e;
   }
 
-  return listarVideos();
+  return lerConteudo();
 }
 
 export default db;

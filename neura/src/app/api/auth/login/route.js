@@ -13,8 +13,19 @@ const tentativas = new Map();
 const LIMITE = 8;
 const JANELA = 10 * 60 * 1000; // 10 min
 
+/* Sem poda o Map só cresce: entradas de IPs que nunca mais voltam ficam para
+   sempre, já que a remoção só acontece em login bem-sucedido. */
+function podarVencidos(agora) {
+  for (const [chave, reg] of tentativas) {
+    if (agora - reg.desde > JANELA) tentativas.delete(chave);
+  }
+}
+
 function excedeu(ip) {
   const agora = Date.now();
+
+  if (tentativas.size > 1000) podarVencidos(agora);
+
   const reg = tentativas.get(ip);
 
   if (!reg || agora - reg.desde > JANELA) {
