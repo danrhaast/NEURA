@@ -1,273 +1,670 @@
 /* ==========================================================================
-   ADMIN.CSS — painel de conteúdo
-   Depende de neura.css (tokens + componentes)
+   ADMIN.CSS — painel de conteúdo da Neura
+
+   Estende os tokens e os primitivos do neura.css; nada aqui redefine cor ou
+   espaçamento por conta própria.
+
+   Sumário
+   01. Login
+   02. Casca        (menu lateral, topo, área da tela)
+   03. Cabeçalho do painel
+   04. Seções e formulários
+   05. Dashboard    (KPIs, cartões, gráfico, origens)
+   06. Listas       (poemas e vídeos)
+   07. Contas
+   08. Prévias, avisos e utilitários
+   09. Responsivo
    ========================================================================== */
-
-.admin { background: var(--n-ink); }
-
-/* o painel ocupa a tela inteira e traz o próprio fundo */
-.panel { min-height: 100vh; background: var(--n-ink); }
-
-.carregando {
-  display: grid;
-  place-items: center;
-  min-height: 100vh;
-  background: var(--n-void);
-  color: var(--n-muted);
-}
-
-
-/* --- controle deslizante (progresso dos shows) --------------------------- */
-
-.slider {
-  display: flex;
-  align-items: center;
-  gap: var(--n-s-5);
-  padding: var(--n-s-5);
-  background: var(--n-panel);
-  border: 1px solid var(--n-line);
-  border-radius: var(--n-r-md);
-}
-
-.slider__range {
-  flex: 1;
-  height: 6px;
-  appearance: none;
-  background: var(--n-void);
-  border: 1px solid var(--n-line);
-  border-radius: var(--n-r-pill);
-  outline-offset: 4px;
-}
-
-.slider__range::-webkit-slider-thumb {
-  appearance: none;
-  width: 20px; height: 20px;
-  background: var(--n-violet);
-  border: 2px solid var(--n-white);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.slider__range::-moz-range-thumb {
-  width: 20px; height: 20px;
-  background: var(--n-violet);
-  border: 2px solid var(--n-white);
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.slider__val {
-  min-width: 4ch;
-  font-family: var(--n-font-head);
-  font-weight: 700;
-  font-size: var(--n-t-lg);
-  color: var(--n-white);
-  text-align: right;
-}
 
 
 /* ==========================================================================
-   TRAVA DE ACESSO
+   01. LOGIN
    ========================================================================== */
 
 .gate {
-  position: fixed;
-  inset: 0;
-  z-index: 300;
+  min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: var(--n-s-5);
-  background: var(--n-void);
+  padding: var(--n-s-6);
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(106,47,245,.16), transparent 70%),
+    var(--n-void);
 }
-
-.gate.is-out { display: none; }
 
 .gate__box {
-  width: 100%;
-  max-width: 360px;
-  padding: var(--n-s-6);
+  width: min(100%, 400px);
+  padding: var(--n-s-7) var(--n-s-6);
   background: var(--n-panel);
   border: 1px solid var(--n-line);
-  border-radius: var(--n-r-md);
+  border-radius: var(--n-r-lg);
+  box-shadow: var(--n-shadow);
 }
 
-.gate__logo { width: 110px; margin: 0 auto var(--n-s-5); }
-.gate__label { display: block; text-align: center; margin-bottom: var(--n-s-6); }
+.gate__logo  { display: block; width: 110px; height: auto; margin: 0 auto var(--n-s-5); }
+.gate__label { display: block; text-align: center; margin-bottom: var(--n-s-6); color: var(--n-muted); }
 
 .gate__err {
-  min-height: 1.4em;
+  min-height: 1.25rem;
   margin-top: var(--n-s-3);
-  font-family: var(--n-font-hud);
-  font-size: var(--n-t-xs);
   color: var(--n-red);
+  font-size: var(--n-t-sm);
   text-align: center;
 }
 
 .gate__warn {
-  margin-top: var(--n-s-5);
+  margin-top: var(--n-s-4);
   padding-top: var(--n-s-4);
   border-top: 1px solid var(--n-line);
-  font-size: 11px;
-  line-height: 1.6;
   color: var(--n-dim);
+  font-size: var(--n-t-xs);
+  line-height: 1.6;
 }
 
 
 /* ==========================================================================
-   BARRA SUPERIOR
+   02. CASCA
+   Menu fixo à esquerda no desktop; gaveta sobreposta no celular.
    ========================================================================== */
 
-.abar {
+.casca {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 244px 1fr;
+  background: var(--n-ink);
+}
+
+.casca__menu {
   position: sticky;
   top: 0;
-  z-index: 50;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-5);
+  padding: var(--n-s-5) var(--n-s-4);
+  background: var(--n-void);
+  border-right: 1px solid var(--n-line);
+  overflow-y: auto;
+}
+
+.casca__marca {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: var(--n-s-3);
+  padding: var(--n-s-2) var(--n-s-3);
+}
+
+.casca__marca img  { width: 92px; height: auto; }
+.casca__marca span { color: var(--n-dim); }
+
+.casca__nav    { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.casca__rodape { padding-top: var(--n-s-4); border-top: 1px solid var(--n-line); }
+
+.casca__grupo {
+  margin: var(--n-s-5) 0 var(--n-s-2);
+  padding-inline: var(--n-s-3);
+  color: var(--n-dim);
+  font-size: 10px;
+}
+
+.casca__link {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-3);
+  padding: var(--n-s-3);
+  border-radius: var(--n-r-md);
+  color: var(--n-text);
+  font-size: var(--n-t-sm);
+  transition: background var(--n-fast), color var(--n-fast);
+}
+
+.casca__link:hover { background: var(--n-panel); color: var(--n-white); }
+
+/* A barra à esquerda marca a tela atual sem depender só da cor. */
+.casca__link.is-active {
+  background: var(--n-panel-2);
+  color: var(--n-white);
+  box-shadow: inset 2px 0 0 var(--n-violet);
+}
+
+.casca__link.is-active .icone { color: var(--n-violet-lt); }
+
+.icone { width: 18px; height: 18px; flex-shrink: 0; color: var(--n-muted); }
+
+.casca__corpo { display: flex; flex-direction: column; min-width: 0; }
+
+.casca__topo {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
   gap: var(--n-s-4);
-  flex-wrap: wrap;
   padding: var(--n-s-4) var(--n-s-6);
-  background: rgba(13,13,13,.96);
+  background: rgba(13,13,13,.92);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--n-line);
 }
 
-.abar__left  { display: flex; align-items: center; gap: var(--n-s-4); }
-.abar__right { display: flex; align-items: center; gap: var(--n-s-3); flex-wrap: wrap; }
-.abar__logo  { width: 92px; }
+.casca__conta   { display: flex; align-items: center; gap: var(--n-s-3); margin-left: auto; }
+.casca__quem    { display: flex; flex-direction: column; line-height: 1.3; }
+.casca__quem strong { font-size: var(--n-t-sm); color: var(--n-white); }
+.casca__quem small  { color: var(--n-dim); font-size: 10px; }
 
-.abar__state { color: var(--n-dim); }
-.abar__state.is-dirty { color: var(--n-red); }
+.casca__avatar,
+.conta__avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: var(--n-r-pill);
+  background: var(--n-violet-dk);
+  border: 1px solid var(--n-violet);
+  color: var(--n-white);
+  font-family: var(--n-font-hud);
+  font-size: var(--n-t-sm);
+}
+
+.casca__tela {
+  flex: 1;
+  width: min(100%, 1040px);
+  padding: var(--n-s-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-5);
+}
+
+.casca__hamburguer { display: none; }
+
+.casca__veu {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  border: 0;
+  background: rgba(0,0,0,.6);
+}
 
 
 /* ==========================================================================
-   ESTRUTURA
+   03. CABEÇALHO DO PAINEL
+   Gruda no alto para o botão Publicar continuar ao alcance numa lista longa.
    ========================================================================== */
 
-.awrap {
-  max-width: 900px;
-  margin-inline: auto;
-  padding: var(--n-s-7) var(--n-s-5) var(--n-s-9);
-}
-
-.asec {
-  margin-top: var(--n-s-7);
-  padding-top: var(--n-s-6);
-  border-top: 1px solid var(--n-line);
-}
-
-.asec__head {
+.phead {
+  position: sticky;
+  top: calc(var(--n-s-4) * 2 + 34px);
+  z-index: 15;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: var(--n-s-4);
   flex-wrap: wrap;
-  margin-bottom: var(--n-s-5);
-}
-
-.asec__title {
-  font-family: var(--n-font-head);
-  font-weight: 500;
-  font-size: var(--n-t-lg);
-  color: var(--n-white);
-}
-
-.asec__hint {
-  margin-top: var(--n-s-2);
-  font-size: var(--n-t-sm);
-  color: var(--n-muted);
-  max-width: 60ch;
-}
-
-.asec__hint code,
-.steps code {
-  padding: 1px 6px;
-  background: var(--n-void);
-  border: 1px solid var(--n-line);
-  border-radius: 3px;
-  font-family: var(--n-font-hud);
-  font-size: .9em;
-  color: var(--n-violet-lt);
-}
-
-
-/* --- instruções --------------------------------------------------------- */
-
-.steps {
   padding: var(--n-s-5);
   background: var(--n-panel);
   border: 1px solid var(--n-line);
-  border-left: 3px solid var(--n-violet);
   border-radius: var(--n-r-md);
 }
 
-.steps__list {
-  margin-top: var(--n-s-4);
-  padding-left: var(--n-s-5);
-  list-style: decimal;
-  color: var(--n-text);
+.phead--simples { position: static; background: none; border: 0; padding: 0; }
+
+.phead__titulo {
+  font-family: var(--n-font-head);
+  font-size: var(--n-t-lg);
+  font-weight: 500;
+  color: var(--n-white);
+  letter-spacing: .01em;
 }
 
-.steps__list li { margin-bottom: var(--n-s-2); }
-.steps__list strong { color: var(--n-white); }
-
-.steps__note {
-  margin-top: var(--n-s-4);
-  font-size: var(--n-t-sm);
+.phead__resumo {
+  margin-top: var(--n-s-2);
   color: var(--n-muted);
+  font-size: var(--n-t-sm);
+  line-height: 1.6;
+  max-width: 62ch;
 }
 
-
-/* --- abas ---------------------------------------------------------------- */
-
-.tabs {
-  display: flex;
-  gap: var(--n-s-2);
-  margin-top: var(--n-s-6);
-  border-bottom: 1px solid var(--n-line);
-}
-
-.tab {
+.phead__acoes {
   display: flex;
   align-items: center;
-  gap: var(--n-s-2);
-  padding: var(--n-s-3) var(--n-s-5);
-  margin-bottom: -1px;
-  border-bottom: 2px solid transparent;
-  font-family: var(--n-font-head);
-  font-size: var(--n-t-sm);
-  color: var(--n-muted);
-  transition: color var(--n-fast), border-color var(--n-fast);
+  gap: var(--n-s-3);
+  flex-wrap: wrap;
 }
 
-.tab:hover { color: var(--n-white); }
-.tab.is-active { color: var(--n-white); border-bottom-color: var(--n-violet); }
-
-.tab__n {
-  min-width: 22px;
-  padding: 1px 6px;
-  background: var(--n-panel-2);
-  border-radius: var(--n-r-pill);
-  font-family: var(--n-font-hud);
-  font-size: 10px;
-  text-align: center;
-}
-
-.tab.is-active .tab__n { background: var(--n-violet); color: #fff; }
+.phead__estado        { color: var(--n-dim); font-size: 10px; }
+.phead__estado.is-dirty { color: var(--n-red); }
 
 
 /* ==========================================================================
-   ITENS EDITÁVEIS
+   04. SEÇÕES E FORMULÁRIOS
+   ========================================================================== */
+
+.asec {
+  padding: var(--n-s-5);
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+}
+
+.asec__titulo,
+.cartao__titulo,
+.dash__titulo {
+  font-family: var(--n-font-head);
+  font-size: var(--n-t-base);
+  font-weight: 500;
+  color: var(--n-white);
+}
+
+.asec__hint,
+.cartao__hint {
+  margin-top: var(--n-s-2);
+  color: var(--n-muted);
+  font-size: var(--n-t-sm);
+  line-height: 1.65;
+  max-width: 68ch;
+}
+
+.form { display: block; }
+
+.n-input--alto { min-height: 168px; font-family: var(--n-font-body); line-height: 1.8; }
+
+select.n-input { cursor: pointer; }
+
+.help {
+  margin-top: var(--n-s-2);
+  color: var(--n-dim);
+  font-size: var(--n-t-xs);
+  line-height: 1.6;
+}
+
+.help--ok        { color: var(--n-violet-lt); }
+.help--bad       { color: var(--n-red); }
+.help--contador  { font-family: var(--n-font-hud); }
+
+.empty {
+  padding: var(--n-s-6);
+  border: 1px dashed var(--n-line);
+  border-radius: var(--n-r-md);
+  color: var(--n-dim);
+  font-size: var(--n-t-sm);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.alerta {
+  padding: var(--n-s-4) var(--n-s-5);
+  background: rgba(232,65,47,.08);
+  border: 1px solid rgba(232,65,47,.35);
+  border-radius: var(--n-r-md);
+  color: var(--n-text);
+  font-size: var(--n-t-sm);
+  line-height: 1.6;
+}
+
+/* --- controle de progresso dos shows --- */
+
+.slider { display: flex; align-items: center; gap: var(--n-s-4); }
+
+.slider__range {
+  flex: 1;
+  appearance: none;
+  height: 6px;
+  border-radius: var(--n-r-pill);
+  background: linear-gradient(90deg, var(--n-violet), var(--n-violet-lt));
+  cursor: pointer;
+}
+
+.slider__range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--n-white);
+  border: 3px solid var(--n-violet);
+  cursor: grab;
+}
+
+.slider__range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--n-violet);
+  border-radius: 50%;
+  background: var(--n-white);
+  cursor: grab;
+}
+
+.slider__range:focus-visible { outline: 2px solid var(--n-violet-lt); outline-offset: 6px; }
+
+.slider__val {
+  min-width: 4ch;
+  font-family: var(--n-font-hud);
+  font-size: var(--n-t-lg);
+  color: var(--n-white);
+  text-align: right;
+}
+
+.atalhos { display: flex; gap: var(--n-s-2); flex-wrap: wrap; }
+
+.atalho {
+  padding: .4rem .9rem;
+  background: transparent;
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-pill);
+  color: var(--n-muted);
+  font-family: var(--n-font-hud);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color var(--n-fast), color var(--n-fast);
+}
+
+.atalho:hover     { border-color: var(--n-violet); color: var(--n-white); }
+.atalho.is-active { border-color: var(--n-violet); background: var(--n-violet); color: #fff; }
+
+
+/* ==========================================================================
+   05. DASHBOARD
+   ========================================================================== */
+
+.dash        { display: flex; flex-direction: column; gap: var(--n-s-6); }
+.dash__bloco { display: flex; flex-direction: column; gap: var(--n-s-4); }
+
+.dash__duas {
+  display: grid;
+  gap: var(--n-s-4);
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.cartao {
+  padding: var(--n-s-5);
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+}
+
+.cartao__nota {
+  margin-top: var(--n-s-5);
+  padding-top: var(--n-s-4);
+  border-top: 1px solid var(--n-line);
+  color: var(--n-dim);
+  font-size: var(--n-t-xs);
+  line-height: 1.6;
+}
+
+/* --- KPIs: o número é a resposta, então ele domina o cartão --- */
+
+.kpis {
+  display: grid;
+  gap: var(--n-s-4);
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.kpi {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-1);
+  padding: var(--n-s-5);
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+}
+
+.kpi__rotulo { color: var(--n-dim); font-size: 10px; }
+
+.kpi__valor {
+  font-family: var(--n-font-head);
+  font-size: 2.4rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--n-white);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi__apoio { color: var(--n-muted); font-size: var(--n-t-xs); }
+
+/* --- gráfico de visitas --- */
+
+.grafico__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--n-s-4);
+  margin-bottom: var(--n-s-5);
+}
+
+.grafico__teto { color: var(--n-dim); font-size: 10px; white-space: nowrap; }
+
+/* O padding do plot reserva as duas faixas fora da área das colunas: em cima
+   para o rótulo do pico, embaixo para as datas do eixo. Fica no plot, e não
+   como margem da lista, para a margem não colapsar e desalinhar a grade. */
+.grafico__plot { position: relative; padding: 18px 0 34px; }
+
+/* Grade recessiva: orienta a leitura da altura sem competir com as colunas.
+   O inset repete as faixas do padding para as linhas casarem com as barras. */
+.grafico__grade {
+  position: absolute;
+  inset: 18px 0 34px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.grafico__grade span { height: 1px; background: var(--n-line); opacity: .55; }
+
+.grafico__barras {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  /* 2px de respiro entre colunas vizinhas: sem isso duas barras altas lado a
+     lado leem como um bloco só. */
+  gap: 2px;
+  height: 180px;
+  list-style: none;
+}
+
+.barra {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  min-width: 0;
+}
+
+.barra__haste {
+  position: relative;
+  width: 100%;
+  /* Cantos só no topo: a base fica ancorada na linha do zero. */
+  border-radius: 4px 4px 0 0;
+  background: var(--n-violet);
+  transition: background var(--n-fast);
+  cursor: default;
+}
+
+.barra__haste.is-pico { background: var(--n-violet-lt); }
+
+.barra__haste:hover,
+.barra__haste:focus-visible {
+  background: var(--n-violet-lt);
+  outline: none;
+}
+
+/* Logo acima do topo da própria coluna — por isso mora dentro dela. */
+.barra__valor {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translate(-50%, -4px);
+  font-family: var(--n-font-hud);
+  font-size: 10px;
+  color: var(--n-white);
+  pointer-events: none;
+}
+
+/* Abaixo da linha do zero, na faixa que o padding do plot reservou. */
+.barra__eixo {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  color: var(--n-dim);
+  font-size: 9px;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.barra__eixo em { font-style: normal; opacity: .65; }
+.barra__eixo.is-marco { display: flex; }
+
+/* Dica: aparece no ponteiro e também no teclado, via :focus-visible. */
+.barra__dica {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--n-s-2) var(--n-s-3);
+  background: var(--n-panel-2);
+  border: 1px solid var(--n-violet);
+  border-radius: var(--n-r-sm);
+  color: var(--n-text);
+  font-size: var(--n-t-xs);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  box-shadow: var(--n-shadow);
+}
+
+.barra__dica strong { color: var(--n-white); font-family: var(--n-font-hud); font-size: 10px; }
+
+.barra__haste:hover .barra__dica,
+.barra__haste:focus-visible .barra__dica { opacity: 1; visibility: visible; }
+
+.grafico__tabela { margin-top: var(--n-s-5); }
+
+.grafico__tabela summary {
+  cursor: pointer;
+  color: var(--n-muted);
+  font-size: 10px;
+  padding: var(--n-s-2) 0;
+}
+
+.grafico__tabela summary:hover { color: var(--n-white); }
+
+.grafico__tabela table {
+  width: 100%;
+  margin-top: var(--n-s-3);
+  border-collapse: collapse;
+  font-size: var(--n-t-sm);
+}
+
+.grafico__tabela th,
+.grafico__tabela td {
+  padding: var(--n-s-2) var(--n-s-3);
+  border-bottom: 1px solid var(--n-line);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--n-text);
+}
+
+.grafico__tabela thead th   { color: var(--n-dim); font-size: 10px; font-weight: 400; }
+.grafico__tabela tbody th   { text-align: left; color: var(--n-muted); font-weight: 400; }
+
+/* --- origens --- */
+
+.origens { margin-top: var(--n-s-4); list-style: none; }
+
+.origens li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--n-s-4);
+  padding: var(--n-s-3) 0;
+  border-bottom: 1px solid var(--n-line);
+}
+
+.origens li:last-child { border-bottom: 0; }
+
+.origens__nome {
+  color: var(--n-text);
+  font-size: var(--n-t-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.origens__n { color: var(--n-violet-lt); font-variant-numeric: tabular-nums; }
+
+/* --- cartões de painel --- */
+
+.cards {
+  display: grid;
+  gap: var(--n-s-4);
+  grid-template-columns: repeat(auto-fill, minmax(224px, 1fr));
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--n-s-2);
+  padding: var(--n-s-5);
+  background: var(--n-panel);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+  transition: border-color var(--n-fast), transform var(--n-fast);
+}
+
+.card:hover { border-color: var(--n-violet); transform: translateY(-2px); }
+.card:hover .card__icone { border-color: var(--n-violet); color: var(--n-violet-lt); }
+
+.card__icone {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: var(--n-s-2);
+  border: 1px solid var(--n-line);
+  border-radius: var(--n-r-md);
+  color: var(--n-muted);
+  transition: border-color var(--n-fast), color var(--n-fast);
+}
+
+.card__icone .icone { width: 20px; height: 20px; color: inherit; }
+
+.card__nome   { font-family: var(--n-font-head); font-size: var(--n-t-base); color: var(--n-white); }
+.card__resumo { color: var(--n-muted); font-size: var(--n-t-sm); line-height: 1.55; flex: 1; }
+
+.card__estado {
+  margin-top: var(--n-s-3);
+  padding-top: var(--n-s-3);
+  border-top: 1px solid var(--n-line);
+  color: var(--n-violet-lt);
+  font-size: 10px;
+}
+
+
+/* ==========================================================================
+   06. LISTAS — poemas e vídeos
    ========================================================================== */
 
 .items { display: grid; gap: var(--n-s-4); }
 
 .item {
-  background: var(--n-panel);
+  background: var(--n-panel-2);
   border: 1px solid var(--n-line);
   border-radius: var(--n-r-md);
   overflow: hidden;
-  transition: border-color var(--n-fast);
 }
 
 .item:focus-within { border-color: var(--n-violet); }
@@ -277,147 +674,237 @@
   align-items: center;
   gap: var(--n-s-3);
   padding: var(--n-s-3) var(--n-s-4);
-  background: var(--n-panel-2);
+  background: var(--n-panel);
   border-bottom: 1px solid var(--n-line);
 }
 
 .item__num {
   display: grid;
   place-items: center;
-  width: 26px; height: 26px;
-  background: var(--n-violet);
-  border-radius: var(--n-r-sm);
-  font-family: var(--n-font-hud);
-  font-size: 11px;
-  color: #fff;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
+  border-radius: var(--n-r-sm);
+  background: var(--n-violet-dk);
+  color: var(--n-white);
+  font-family: var(--n-font-hud);
+  font-size: 10px;
 }
 
 .item__name {
   flex: 1;
   min-width: 0;
-  font-family: var(--n-font-head);
-  font-size: var(--n-t-sm);
-  color: var(--n-white);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--n-text);
+  font-size: var(--n-t-sm);
 }
 
 .item__acts { display: flex; gap: 4px; flex-shrink: 0; }
 
 .iact {
-  display: grid;
-  place-items: center;
-  width: 30px; height: 30px;
+  width: 28px;
+  height: 28px;
+  background: transparent;
   border: 1px solid var(--n-line);
   border-radius: var(--n-r-sm);
   color: var(--n-muted);
-  font-size: 13px;
-  line-height: 1;
-  transition: all var(--n-fast);
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color var(--n-fast), color var(--n-fast);
 }
 
 .iact:hover:not(:disabled) { border-color: var(--n-violet); color: var(--n-white); }
-.iact:disabled { opacity: .28; cursor: not-allowed; }
-.iact--del:hover { border-color: var(--n-red); color: var(--n-red); }
+.iact:disabled             { opacity: .28; cursor: not-allowed; }
+.iact--del:hover:not(:disabled) { border-color: var(--n-red); color: var(--n-red); }
 
 .item__body { padding: var(--n-s-5); display: grid; gap: var(--n-s-4); }
 
 .field2 { display: grid; gap: var(--n-s-4); grid-template-columns: 1fr 1fr; }
 
-.item__body textarea.n-input { min-height: 158px; font-family: var(--n-font-body); line-height: 1.8; }
 
-.help {
-  margin-top: var(--n-s-2);
-  font-size: 11px;
-  color: var(--n-dim);
-}
+/* ==========================================================================
+   07. CONTAS
+   ========================================================================== */
 
-.help--ok  { color: var(--n-violet-lt); }
-.help--bad { color: var(--n-red); }
+.contas { display: grid; gap: var(--n-s-3); }
 
-.empty {
-  padding: var(--n-s-6);
-  text-align: center;
-  color: var(--n-dim);
-  border: 1px dashed var(--n-line);
+.conta {
+  display: grid;
+  grid-template-columns: auto minmax(140px, 1fr) auto;
+  align-items: center;
+  gap: var(--n-s-4);
+  padding: var(--n-s-4);
+  background: var(--n-panel-2);
+  border: 1px solid var(--n-line);
   border-radius: var(--n-r-md);
 }
 
+.conta__quem  { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.conta__quem strong { color: var(--n-white); font-size: var(--n-t-sm); display: flex; align-items: center; gap: var(--n-s-2); }
+.conta__login { color: var(--n-dim); font-size: 10px; }
 
-/* --- prévia do vídeo ------------------------------------------------------ */
+.conta__eu {
+  padding: 1px 6px;
+  border-radius: var(--n-r-pill);
+  background: var(--n-violet-dk);
+  color: var(--n-white);
+  font-size: 9px;
+}
 
-.vprev {
+.conta__meta { display: flex; flex-direction: column; align-items: flex-end; gap: var(--n-s-2); }
+.conta__meta .n-hud { color: var(--n-dim); font-size: 10px; text-align: right; }
+
+.conta__acts {
+  grid-column: 1 / -1;
   display: flex;
-  align-items: center;
-  gap: var(--n-s-4);
-  padding: var(--n-s-3);
-  background: var(--n-void);
-  border: 1px solid var(--n-line);
-  border-radius: var(--n-r-sm);
+  gap: var(--n-s-2);
+  flex-wrap: wrap;
+  padding-top: var(--n-s-3);
+  border-top: 1px solid var(--n-line);
 }
 
-.vprev img {
-  width: 116px;
-  aspect-ratio: 16/9;
-  object-fit: cover;
-  border-radius: 3px;
-  flex-shrink: 0;
+/* O papel vem escrito, não só colorido — o selo é reforço, não a informação. */
+.selo {
+  padding: 2px 10px;
+  border-radius: var(--n-r-pill);
+  font-family: var(--n-font-hud);
+  font-size: 10px;
+  border: 1px solid;
 }
 
-.vprev__none {
-  width: 116px;
-  aspect-ratio: 16/9;
-  display: grid;
-  place-items: center;
-  background: var(--n-panel-2);
-  border-radius: 3px;
-  font-size: 11px;
-  color: var(--n-dim);
-  flex-shrink: 0;
-}
+.selo--dono   { color: var(--n-violet-lt); border-color: var(--n-violet); background: rgba(106,47,245,.12); }
+.selo--editor { color: var(--n-muted); border-color: var(--n-line); }
 
-
-/* --- zona de reversão ------------------------------------------------------ */
-
-.danger { border-top-color: rgba(232,65,47,.35); }
+.n-btn--perigo { --btn-bd: var(--n-red); }
+.n-btn--perigo:hover:not(:disabled) { border-color: var(--n-red); color: var(--n-red); }
+.n-btn:disabled { opacity: .35; cursor: not-allowed; }
 
 
 /* ==========================================================================
-   TOAST
+   08. PRÉVIAS, AVISOS E UTILITÁRIOS
    ========================================================================== */
+
+.vprev, .fprev {
+  display: flex;
+  align-items: center;
+  gap: var(--n-s-3);
+  margin-top: var(--n-s-3);
+}
+
+.vprev img {
+  width: 132px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: var(--n-r-sm);
+  border: 1px solid var(--n-line);
+}
+
+.fprev img {
+  width: 180px;
+  aspect-ratio: 4/5;
+  object-fit: cover;
+  border-radius: var(--n-r-sm);
+  border: 1px solid var(--n-line);
+}
+
+.vprev__none, .fprev__vazio {
+  display: grid;
+  place-items: center;
+  width: 132px;
+  aspect-ratio: 16/9;
+  border: 1px dashed var(--n-line);
+  border-radius: var(--n-r-sm);
+  color: var(--n-dim);
+  font-family: var(--n-font-hud);
+  font-size: 10px;
+}
+
+.fprev__vazio { width: 180px; aspect-ratio: 4/5; }
+
+.vprev .n-hud, .fprev .n-hud { color: var(--n-dim); font-size: 10px; }
 
 .toast {
   position: fixed;
   left: 50%;
   bottom: var(--n-s-6);
-  transform: translate(-50%, 20px);
-  z-index: 400;
+  z-index: 60;
   padding: var(--n-s-3) var(--n-s-5);
-  background: var(--n-white);
-  color: var(--n-void);
-  border-radius: var(--n-r-sm);
-  font-family: var(--n-font-hud);
-  font-size: var(--n-t-xs);
-  letter-spacing: .1em;
-  text-transform: uppercase;
+  background: var(--n-violet);
+  border-radius: var(--n-r-pill);
+  color: #fff;
+  font-size: var(--n-t-sm);
+  box-shadow: var(--n-shadow);
   opacity: 0;
   visibility: hidden;
+  transform: translate(-50%, 12px);
   transition: opacity var(--n-normal), transform var(--n-normal), visibility var(--n-normal);
 }
 
-.toast.is-on { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
-.toast.is-bad { background: var(--n-red); color: #fff; }
+.toast.is-on  { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+.toast.is-bad { background: var(--n-red); }
 
 
 /* ==========================================================================
-   RESPONSIVO
+   09. RESPONSIVO
    ========================================================================== */
 
+@media (max-width: 900px) {
+  .casca { grid-template-columns: 1fr; }
+
+  .casca__menu {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    width: 262px;
+    transform: translateX(-100%);
+    transition: transform var(--n-normal) var(--n-ease);
+  }
+
+  .casca.is-open .casca__menu { transform: none; }
+  .casca.is-open .casca__veu  { display: block; }
+
+  .casca__hamburguer {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 38px;
+    height: 38px;
+    padding: 0 8px;
+    background: transparent;
+    border: 1px solid var(--n-line);
+    border-radius: var(--n-r-sm);
+    cursor: pointer;
+  }
+
+  .casca__hamburguer span {
+    display: block;
+    height: 1.5px;
+    background: var(--n-text);
+    border-radius: 2px;
+  }
+
+  .casca__tela { padding: var(--n-s-5) var(--n-s-4); }
+  .dash__duas  { grid-template-columns: 1fr; }
+  .phead       { position: static; }
+}
+
 @media (max-width: 700px) {
-  .abar { padding: var(--n-s-3) var(--n-s-4); }
-  .abar__right { width: 100%; justify-content: space-between; }
   .field2 { grid-template-columns: 1fr; }
-  .awrap { padding-inline: var(--n-s-4); }
+
+  .phead        { align-items: flex-start; flex-direction: column; }
+  .phead__acoes { width: 100%; }
+
+  .conta        { grid-template-columns: auto 1fr; }
+  .conta__meta  { grid-column: 1 / -1; align-items: flex-start; }
+  .conta__meta .n-hud { text-align: left; }
+
+  .kpi__valor   { font-size: 2rem; }
+  .casca__quem  { display: none; }
+
+  /* No celular a coluna fica fina demais para qualquer rótulo de eixo. */
+  .barra__eixo  { display: none; }
+  .barra__eixo.is-marco { display: flex; }
 }

@@ -11,7 +11,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "senha": "node scripts/gerar-senha.mjs"
+    "senha": "node scripts/gerar-senha.mjs",
+    "usuario": "node --env-file-if-exists=.env.local scripts/usuario.mjs"
   },
   "dependencies": {
     "next": "^15.5.4",

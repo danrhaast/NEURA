@@ -1,23 +1,22 @@
 /* ==========================================================================
-   Gera o hash da senha do painel e o segredo de sessão.
+   Gera o segredo de sessão do painel.
+
+   As contas do painel NÃO ficam aqui — ficam no banco, e quem as administra é
+   `npm run usuario`. Este script cuida só do que mora no .env.local.
 
    Uso:
-     npm run senha -- minhaSenhaNova
-     npm run senha                    (gera uma senha aleatória)
+     npm run senha
 
    Copie as linhas geradas para o arquivo .env.local
    ========================================================================== */
 
-import { scryptSync, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 
-const senha = process.argv[2] || randomBytes(9).toString('base64url');
-
-const salt = randomBytes(16).toString('hex');
-const hash = scryptSync(senha, salt, 64).toString('hex');
 const segredo = randomBytes(32).toString('base64url');
 
-console.log('\n  Senha do painel:  ' + senha);
-console.log('  (guarde — ela não é recuperável a partir do hash)\n');
-console.log('  Cole no .env.local:\n');
-console.log(`ADMIN_SENHA_HASH=${salt}:${hash}`);
-console.log(`SESSAO_SEGREDO=${segredo}\n`);
+console.log('\n  Cole no .env.local:\n');
+console.log(`SESSAO_SEGREDO=${segredo}`);
+console.log('NEXT_PUBLIC_SITE_URL=https://seudominio.com\n');
+console.log('  Depois crie a conta do painel:\n');
+console.log('    npm run usuario -- criar admin --dono\n');
+console.log('  Trocar o SESSAO_SEGREDO desloga todo mundo — as contas seguem valendo.\n');

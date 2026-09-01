@@ -1,13 +1,19 @@
 /* ==========================================================================
    GET  /api/conteudo   → conteúdo público (aberto)
-   PUT  /api/conteudo   → grava tudo de uma vez (exige sessão)
+   PUT  /api/conteudo   → grava (exige sessão)
+
+   O PUT aceita payload parcial: cada painel manda só a sua seção e o que não
+   vier fica como está. Assim dois painéis abertos ao mesmo tempo não
+   sobrescrevem um ao outro com dados que nem carregaram.
    ========================================================================== */
 
 import { lerConteudo, salvarConteudo } from '@/lib/db';
-import { autenticado, naoAutorizado } from '@/lib/auth';
+import { exigirSessao } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+const LIMITE_ITENS = 200;
 
 export async function GET() {
   try {
@@ -19,7 +25,8 @@ export async function GET() {
 }
 
 export async function PUT(req) {
-  if (!(await autenticado())) return naoAutorizado();
+  const { erro: semSessao } = await exigirSessao();
+  if (semSessao) return semSessao;
 
   let corpo;
   try {
@@ -28,18 +35,29 @@ export async function PUT(req) {
     return Response.json({ erro: 'JSON inválido' }, { status: 400 });
   }
 
-  const { poemas, videos, progressoShows } = corpo ?? {};
+  const { poemas, videos, progressoShows, sobre } = corpo ?? {};
 
-  if (!Array.isArray(poemas) || !Array.isArray(videos)) {
-    return Response.json({ erro: 'Envie "poemas" e "videos" como listas' }, { status: 400 });
+  if (poemas === undefined && videos === undefined && progressoShows === undefined && sobre === undefined) {
+    return Response.json({ erro: 'Nada para gravar' }, { status: 400 });
   }
 
-  if (poemas.length > 200 || videos.length > 200) {
-    return Response.json({ erro: 'Limite de 200 itens por lista' }, { status: 400 });
+  for (const [nome, lista] of [['poemas', poemas], ['videos', videos]]) {
+    if (lista === undefined) continue;
+
+    if (!Array.isArray(lista)) {
+      return Response.json({ erro: `"${nome}" precisa ser uma lista` }, { status: 400 });
+    }
+    if (lista.length > LIMITE_ITENS) {
+      return Response.json({ erro: `Limite de ${LIMITE_ITENS} itens por lista` }, { status: 400 });
+    }
+  }
+
+  if (sobre !== undefined && (typeof sobre !== 'object' || sobre === null || Array.isArray(sobre))) {
+    return Response.json({ erro: '"sobre" precisa ser um objeto' }, { status: 400 });
   }
 
   try {
-    return Response.json({ ok: true, ...salvarConteudo({ poemas, videos, progressoShows }) });
+    return Response.json({ ok: true, ...salvarConteudo({ poemas, videos, progressoShows, sobre }) });
   } catch (e) {
     console.error('PUT /api/conteudo', e);
     return Response.json({ erro: 'Falha ao gravar' }, { status: 500 });

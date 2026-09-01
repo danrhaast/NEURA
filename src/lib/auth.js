@@ -1,56 +1,31 @@
 /* ==========================================================================
-   AUTH.JS — autenticação do painel
+   AUTH.JS — sessão do painel
 
-   Diferente da versão estática antiga, agora a senha é verificada NO
-   SERVIDOR. O navegador nunca recebe a senha nem o hash.
+   A senha é conferida no servidor e nunca volta para o navegador. O login
+   devolve um cookie httpOnly assinado com HMAC-SHA256, inacessível ao
+   JavaScript da página.
 
-   - A senha é guardada como hash scrypt em ADMIN_SENHA_HASH (.env.local).
-   - O login devolve um cookie httpOnly assinado com HMAC-SHA256.
-   - O cookie é inacessível ao JavaScript da página (protege contra XSS).
+   O token carrega o id da conta, não um "sou admin" genérico. Quem valida
+   ainda relê o usuário no banco a cada requisição: assim excluir uma conta
+   ou rebaixar um papel vale na hora, sem esperar o token vencer.
 
-   Gere o hash com:  npm run senha
+   Contas são criadas pelo painel do dono ou por `npm run usuario` — não há
+   cadastro público.
    ========================================================================== */
 
-import { scryptSync, randomBytes, timingSafeEqual, createHmac } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 
-const COOKIE   = 'neura_sessao';
-const DURACAO  = 60 * 60 * 8; // 8 horas
+import { buscarUsuarioPorId } from '@/lib/db';
+import { podeVer, painelDaRota } from '@/lib/papeis';
+
+const COOKIE  = 'neura_sessao';
+const DURACAO = 60 * 60 * 8; // 8 horas
 
 
 /* ==========================================================================
-   SENHA
-   ========================================================================== */
-
-/** Gera "salt:hash" para guardar no .env.local */
-export function criarHash(senha) {
-  const salt = randomBytes(16).toString('hex');
-  const hash = scryptSync(senha, salt, 64).toString('hex');
-  return `${salt}:${hash}`;
-}
-
-/** Compara em tempo constante, para não vazar informação pelo tempo de resposta. */
-export function conferirSenha(senha, guardado) {
-  if (!guardado || !guardado.includes(':')) return false;
-
-  const [salt, hash] = guardado.split(':');
-  let esperado, recebido;
-
-  try {
-    esperado = Buffer.from(hash, 'hex');
-    recebido = scryptSync(senha, salt, 64);
-  } catch {
-    return false;
-  }
-
-  if (esperado.length !== recebido.length) return false;
-  return timingSafeEqual(esperado, recebido);
-}
-
-
-/* ==========================================================================
-   SESSÃO
-   Token = base64url(payload) + "." + assinatura HMAC
+   TOKEN
+   base64url(payload) + "." + assinatura HMAC
    ========================================================================== */
 
 function segredo() {
@@ -65,30 +40,38 @@ function assinar(dados) {
   return createHmac('sha256', segredo()).update(dados).digest('base64url');
 }
 
-export function criarToken() {
+export function criarToken(usuario) {
   const payload = Buffer
-    .from(JSON.stringify({ adm: true, exp: Date.now() + DURACAO * 1000 }))
+    .from(JSON.stringify({ uid: usuario.id, exp: Date.now() + DURACAO * 1000 }))
     .toString('base64url');
 
   return `${payload}.${assinar(payload)}`;
 }
 
-export function conferirToken(token) {
-  if (!token || !token.includes('.')) return false;
+/** Devolve o id da conta se o token for válido e estiver no prazo, senão null. */
+export function lerToken(token) {
+  if (!token || !token.includes('.')) return null;
 
   const [payload, assinatura] = token.split('.');
-  const esperada = assinar(payload);
+
+  let esperada;
+  try {
+    esperada = assinar(payload);
+  } catch {
+    return null; // SESSAO_SEGREDO não configurado
+  }
 
   // comparação em tempo constante
   const a = Buffer.from(assinatura);
   const b = Buffer.from(esperada);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return false;
+  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
 
   try {
-    const { adm, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString());
-    return adm === true && typeof exp === 'number' && Date.now() < exp;
+    const { uid, exp } = JSON.parse(Buffer.from(payload, 'base64url').toString());
+    if (typeof uid !== 'number' || typeof exp !== 'number' || Date.now() >= exp) return null;
+    return uid;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -97,9 +80,9 @@ export function conferirToken(token) {
    COOKIE
    ========================================================================== */
 
-export async function abrirSessao() {
+export async function abrirSessao(usuario) {
   const jar = await cookies();
-  jar.set(COOKIE, criarToken(), {
+  jar.set(COOKIE, criarToken(usuario), {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
@@ -113,13 +96,60 @@ export async function fecharSessao() {
   jar.delete(COOKIE);
 }
 
-/** true se a requisição atual tem sessão válida. */
-export async function autenticado() {
+
+/* ==========================================================================
+   LEITURA DA SESSÃO
+   ========================================================================== */
+
+/**
+ * A conta da requisição atual, ou null. Já sem o hash da senha — o que sai
+ * daqui pode ir para o navegador.
+ */
+export async function sessao() {
   const jar = await cookies();
-  return conferirToken(jar.get(COOKIE)?.value);
+  const uid = lerToken(jar.get(COOKIE)?.value);
+  if (uid === null) return null;
+
+  // O token é válido, mas a conta pode ter sido excluída ou ter mudado de
+  // papel desde que ele foi emitido. O banco é a fonte da verdade.
+  return buscarUsuarioPorId(uid);
 }
 
-/** Resposta 401 padrão para rotas protegidas. */
+/** true se a requisição atual tem sessão válida. */
+export async function autenticado() {
+  return (await sessao()) !== null;
+}
+
+
+/* ==========================================================================
+   GUARDAS PARA AS ROTAS DE API
+   ========================================================================== */
+
 export function naoAutorizado() {
   return Response.json({ erro: 'Não autorizado' }, { status: 401 });
+}
+
+export function proibido() {
+  return Response.json({ erro: 'Sua conta não tem acesso a esta área.' }, { status: 403 });
+}
+
+/**
+ * Uso: `const { usuario, erro } = await exigirSessao(); if (erro) return erro;`
+ */
+export async function exigirSessao() {
+  const usuario = await sessao();
+  return usuario ? { usuario, erro: null } : { usuario: null, erro: naoAutorizado() };
+}
+
+/** Igual, mas também cobra que a conta enxergue o painel de `id`. */
+export async function exigirPainel(id) {
+  const { usuario, erro } = await exigirSessao();
+  if (erro) return { usuario: null, erro };
+
+  const painel = painelDaRota(`/admin/${id}`);
+  if (painel && !podeVer(painel, usuario.papel)) {
+    return { usuario: null, erro: proibido() };
+  }
+
+  return { usuario, erro: null };
 }

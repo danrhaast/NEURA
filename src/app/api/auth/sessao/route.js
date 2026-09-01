@@ -1,11 +1,20 @@
-/* GET /api/auth/sessao → { autenticado: boolean }
-   Usado pelo painel para saber se já há sessão aberta ao carregar. */
+/* GET /api/auth/sessao → { autenticado, usuario, paineis }
+   Usado pelo painel para saber quem está logado e o que essa conta enxerga. */
 
-import { autenticado } from '@/lib/auth';
+import { sessao } from '@/lib/auth';
+import { paineisDe } from '@/lib/papeis';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  return Response.json({ autenticado: await autenticado() });
+  const usuario = await sessao();
+
+  if (!usuario) return Response.json({ autenticado: false, usuario: null, paineis: [] });
+
+  return Response.json({
+    autenticado: true,
+    usuario,
+    paineis: paineisDe(usuario.papel).map((p) => p.id),
+  });
 }
