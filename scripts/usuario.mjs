@@ -36,14 +36,14 @@ function sair(msg, codigo = 1) {
   process.exit(codigo);
 }
 
-function achar(login) {
-  const conta = buscarUsuarioParaLogin(login);
+async function achar(login) {
+  const conta = await buscarUsuarioParaLogin(login);
   if (!conta) sair(`Não existe conta com o usuário "${login}".`);
   return conta;
 }
 
-function tabela() {
-  const contas = listarUsuarios();
+async function tabela() {
+  const contas = await listarUsuarios();
 
   if (!contas.length) {
     console.log('\n  Nenhuma conta cadastrada.');
@@ -72,7 +72,7 @@ async function definirSenha(informada) {
 
 switch (comando) {
   case 'listar': {
-    tabela();
+    await tabela();
     break;
   }
 
@@ -80,12 +80,12 @@ switch (comando) {
     const login = args[1];
     if (!login) sair('Informe o usuário:  npm run usuario -- criar <usuario>');
 
-    if (buscarUsuarioParaLogin(login)) sair(`Já existe uma conta "${login}".`);
+    if (await buscarUsuarioParaLogin(login)) sair(`Já existe uma conta "${login}".`);
 
     const { senha, hash } = await definirSenha(args[2]);
-    const papel = flags.has('--dono') || listarUsuarios().length === 0 ? 'dono' : 'editor';
+    const papel = flags.has('--dono') || (await listarUsuarios()).length === 0 ? 'dono' : 'editor';
 
-    const conta = criarUsuario({ usuario: login, nome: args[3] ?? '', senhaHash: hash, papel });
+    const conta = await criarUsuario({ usuario: login, nome: args[3] ?? '', senhaHash: hash, papel });
 
     console.log(`\n  Conta criada:  ${conta.usuario}  (${conta.papel})`);
     console.log(`  Senha:         ${senha}`);
@@ -97,9 +97,9 @@ switch (comando) {
     const login = args[1];
     if (!login) sair('Informe o usuário:  npm run usuario -- senha <usuario>');
 
-    const conta = achar(login);
+    const conta = await achar(login);
     const { senha, hash } = await definirSenha(args[2]);
-    atualizarUsuario(conta.id, { senhaHash: hash });
+    await atualizarUsuario(conta.id, { senhaHash: hash });
 
     console.log(`\n  Senha de "${conta.usuario}" trocada.`);
     console.log(`  Nova senha:  ${senha}\n`);
@@ -112,12 +112,12 @@ switch (comando) {
       sair('Uso:  npm run usuario -- papel <usuario> dono|editor');
     }
 
-    const conta = achar(login);
-    if (conta.papel === 'dono' && papel !== 'dono' && contarDonos() <= 1) {
+    const conta = await achar(login);
+    if (conta.papel === 'dono' && papel !== 'dono' && (await contarDonos()) <= 1) {
       sair('Esta é a única conta dona. Promova outra antes de rebaixar esta.');
     }
 
-    atualizarUsuario(conta.id, { papel });
+    await atualizarUsuario(conta.id, { papel });
     console.log(`\n  "${conta.usuario}" agora é ${papel}.\n`);
     break;
   }
@@ -126,12 +126,12 @@ switch (comando) {
     const login = args[1];
     if (!login) sair('Informe o usuário:  npm run usuario -- excluir <usuario>');
 
-    const conta = achar(login);
-    if (conta.papel === 'dono' && contarDonos() <= 1) {
+    const conta = await achar(login);
+    if (conta.papel === 'dono' && (await contarDonos()) <= 1) {
       sair('Esta é a única conta dona do painel. Crie ou promova outra antes.');
     }
 
-    excluirUsuario(conta.id);
+    await excluirUsuario(conta.id);
     console.log(`\n  Conta "${conta.usuario}" excluída.\n`);
     break;
   }

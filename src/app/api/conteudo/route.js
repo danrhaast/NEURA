@@ -17,7 +17,7 @@ const LIMITE_ITENS = 200;
 
 export async function GET() {
   try {
-    return Response.json(lerConteudo());
+    return Response.json(await lerConteudo());
   } catch (e) {
     console.error('GET /api/conteudo', e);
     return Response.json({ erro: 'Falha ao ler o conteúdo' }, { status: 500 });
@@ -57,7 +57,8 @@ export async function PUT(req) {
   }
 
   try {
-    return Response.json({ ok: true, ...salvarConteudo({ poemas, videos, progressoShows, sobre }) });
+    const gravado = await salvarConteudo({ poemas, videos, progressoShows, sobre });
+    return Response.json({ ok: true, ...gravado });
   } catch (e) {
     console.error('PUT /api/conteudo', e);
     return Response.json({ erro: 'Falha ao gravar' }, { status: 500 });

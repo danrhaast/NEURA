@@ -24,7 +24,7 @@ async function contexto(params) {
     return { erro: Response.json({ erro: 'Id inválido' }, { status: 400 }) };
   }
 
-  const alvo = buscarUsuarioPorId(id);
+  const alvo = await buscarUsuarioPorId(id);
   if (!alvo) {
     return { erro: Response.json({ erro: 'Conta não encontrada' }, { status: 404 }) };
   }
@@ -52,7 +52,7 @@ export async function PATCH(req, { params }) {
     if (!ehPapelValido(papel)) {
       return Response.json({ erro: 'Papel inválido.' }, { status: 400 });
     }
-    if (alvo.papel === 'dono' && papel !== 'dono' && contarDonos() <= 1) {
+    if (alvo.papel === 'dono' && papel !== 'dono' && (await contarDonos()) <= 1) {
       return Response.json(
         { erro: 'Esta é a única conta dona. Promova outra antes de rebaixar esta.' },
         { status: 409 }
@@ -72,7 +72,8 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    return Response.json({ ok: true, usuario: atualizarUsuario(alvo.id, mudancas), eu: eu.id });
+    const alterado = await atualizarUsuario(alvo.id, mudancas);
+    return Response.json({ ok: true, usuario: alterado, eu: eu.id });
   } catch (e) {
     console.error('PATCH /api/usuarios/:id', e);
     return Response.json({ erro: 'Falha ao alterar a conta' }, { status: 500 });
@@ -90,12 +91,12 @@ export async function DELETE(_req, { params }) {
     );
   }
 
-  if (alvo.papel === 'dono' && contarDonos() <= 1) {
+  if (alvo.papel === 'dono' && (await contarDonos()) <= 1) {
     return Response.json({ erro: 'Esta é a única conta dona do painel.' }, { status: 409 });
   }
 
   try {
-    excluirUsuario(alvo.id);
+    await excluirUsuario(alvo.id);
     return Response.json({ ok: true });
   } catch (e) {
     console.error('DELETE /api/usuarios/:id', e);

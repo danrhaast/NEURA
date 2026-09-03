@@ -4,16 +4,15 @@ Site da banda Neura — página pública + painel de edição de conteúdo.
 
 Next.js 15 (App Router), React 19, JavaScript. Sem framework de CSS: os estilos
 são um mini-framework próprio em `src/styles/`. O conteúdo editável e as contas
-do painel ficam em SQLite, lido pelo `node:sqlite` nativo — não há dependência
-de banco a instalar.
+do painel ficam em SQLite, acessado pelo cliente libSQL: um arquivo em disco no
+desenvolvimento, o Turso em produção — o mesmo código nos dois casos.
 
 ---
 
 ## Requisitos
 
-- **Node 24 ou superior.** O `node:sqlite` só é estável a partir do Node 24; em
-  versões anteriores exigiria a flag `--experimental-sqlite`. Há um `.nvmrc` no
-  repositório: `nvm use` já pega a versão certa.
+- **Node 24 ou superior.** Há um `.nvmrc` no repositório: `nvm use` já pega a
+  versão certa. É a versão usada também no Vercel.
 
 ## Primeiros passos
 
@@ -26,8 +25,10 @@ Copie as linhas geradas para um arquivo `.env.local` novo:
 
 ```
 SESSAO_SEGREDO=...
-NEXT_PUBLIC_SITE_URL=https://seudominio.com
 ```
+
+Sem `TURSO_DATABASE_URL` o banco cai em `file:data/neura.db`, que é o que você
+quer no desenvolvimento.
 
 Depois crie a conta que vai administrar o painel:
 
@@ -54,6 +55,7 @@ npm run dev              # http://localhost:3000  ·  painel em /admin
 | `npm run lint` | ESLint |
 | `npm run senha` | gera o segredo de sessão |
 | `npm run usuario` | administra as contas do painel |
+| `npm run migrar` | copia o banco local para o Turso |
 
 ---
 
@@ -111,7 +113,11 @@ HMAC-SHA256, válido por 8 horas, inacessível ao JavaScript da página. O token
 carrega o id da conta, e o servidor relê o usuário no banco a cada requisição:
 excluir uma conta ou rebaixar um papel vale na hora, sem esperar o cookie
 vencer. Contra força bruta há um limite de 8 tentativas por IP a cada 10
-minutos e um teto global por minuto, ambos em memória.
+minutos e um teto global de 30 por minuto — este último é o que sobrevive a um
+`x-forwarded-for` forjado, já que o IP vem de um cabeçalho que o cliente
+controla. Os contadores ficam no banco, não em memória: no serverless cada
+invocação pode cair numa instância nova, e um contador local daria ao atacante
+um placar zerado a cada requisição.
 
 ### Medição de acesso
 
@@ -130,21 +136,66 @@ não contar robô e pré-carregamento.
 
 ## Como o conteúdo funciona
 
-A home é um Server Component: lê o SQLite direto, sem passar por `fetch`, e
-entrega o HTML pronto. Funciona com o JavaScript desligado e não depende de
-cache — o que for publicado no painel aparece no próximo carregamento.
+A home é um Server Component: consulta o banco sem passar por `fetch` e entrega
+o HTML pronto. Funciona com o JavaScript desligado e não depende de cache — o
+que for publicado no painel aparece no próximo carregamento.
 
 ## Onde os dados ficam
 
-Em `data/neura.db`, criado e populado com o conteúdo inicial na primeira
-execução. O diretório `data/` está no `.gitignore`.
+O acesso é sempre pelo cliente libSQL; o que muda entre os ambientes é só a URL
+em `TURSO_DATABASE_URL`:
 
-> **Isto define onde o site pode ser hospedado.** O banco é um arquivo no disco
-> do processo, então **Vercel, Netlify e afins não servem**: nessas plataformas o
-> filesystem é efêmero e toda publicação feita no painel — e toda conta criada —
-> seria perdida. Use um host com disco persistente e Node 24 — VPS, Fly.io,
-> Railway, Render. Se um dia for preciso ir para serverless, o caminho é trocar o
-> `node:sqlite` por Turso ou Postgres; só `src/lib/db.js` muda.
+| | URL | Onde vive |
+|---|---|---|
+| Desenvolvimento | `file:data/neura.db` (padrão) | arquivo em disco, ignorado pelo git |
+| Produção | `libsql://SEU-BANCO.turso.io` | Turso |
 
-**Faça backup do `data/neura.db`.** É o único lugar onde o conteúdo publicado,
-as contas e o histórico de acesso existem.
+> **No Vercel o banco tem que ficar fora do processo.** O filesystem lá é
+> efêmero: com uma URL `file:` em produção, o painel diria "publicado" e o
+> conteúdo — junto com as contas criadas — sumiria no próximo cold start.
+
+Um banco local existente não é sobrescrito: na primeira abertura o esquema é
+completado com as tabelas novas e o conteúdo já presente é mantido.
+
+**Backup.** Em produção é o Turso que guarda tudo — conteúdo, contas e histórico
+de acesso — e ele tem cópia de segurança própria. No banco local, copiar só o
+`data/neura.db` **não basta**: em modo WAL as escritas recentes ficam no
+`neura.db-wal`, então leve os três arquivos (`.db`, `-wal`, `-shm`) ou nada
+garante que a cópia esteja completa.
+
+---
+
+## Publicar no Vercel
+
+1. **Crie o banco no Turso** e guarde a URL `libsql://` e o token.
+
+2. **Leve o banco local para lá** — sem este passo a produção nasce só com o
+   conteúdo inicial, e a conta do painel fica para trás:
+
+   ```bash
+   npm run migrar
+   ```
+
+   Copia poemas, vídeos, configurações e contas. O histórico de acesso fica de
+   fora de propósito: visitas ao ambiente local não são visitas do site.
+
+3. **Cadastre as variáveis** no projeto do Vercel:
+
+   | Variável | Valor |
+   |---|---|
+   | `SESSAO_SEGREDO` | saída de `npm run senha` |
+   | `TURSO_DATABASE_URL` | `libsql://SEU-BANCO.turso.io` |
+   | `TURSO_AUTH_TOKEN` | o token do Turso |
+   | `NEXT_PUBLIC_SITE_URL` | só quando houver domínio próprio |
+   | `SITE_FUSO_MINUTOS` | opcional; padrão `-180` (Brasília) |
+
+   Sem `NEXT_PUBLIC_SITE_URL` o endereço público é deduzido do domínio de
+   produção do próprio Vercel, então OpenGraph, `robots.txt` e `sitemap.xml`
+   saem certos desde o primeiro deploy.
+
+4. **Faça o deploy.** O projeto roda em Node 24, que é o que o `.nvmrc` e o
+   campo `engines` do `package.json` pedem.
+
+> O plano Hobby do Vercel é para **uso não-comercial**. As diretrizes deles
+> listam divulgar um produto ou serviço e pedir doações como uso comercial —
+> vale conferir antes de anunciar shows ou vender merch pelo site.

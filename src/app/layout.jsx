@@ -1,5 +1,7 @@
 import { Poppins, Inter, Chakra_Petch } from 'next/font/google';
 
+import { SITE } from '@/lib/site';
+
 import './globals.css';
 
 /* next/font baixa e serve as fontes do próprio domínio: sai o round-trip para
@@ -27,11 +29,6 @@ const chakraPetch = Chakra_Petch({
   variable: '--n-fonte-hud',
   display: 'swap',
 });
-
-/* Endereço público do site. Sem isso o Next não consegue montar as URLs
-   absolutas que o OpenGraph exige e avisa a cada build. Defina
-   NEXT_PUBLIC_SITE_URL no .env.local quando o domínio estiver de pé. */
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 export const metadata = {
   metadataBase: new URL(SITE),

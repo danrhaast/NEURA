@@ -1,4 +1,4 @@
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+import { SITE } from '@/lib/site';
 
 /* Site de página única: só a home entra. As seções são âncoras da mesma URL. */
 export default function sitemap() {

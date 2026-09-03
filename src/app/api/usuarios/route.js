@@ -29,7 +29,7 @@ export async function GET() {
   if (erro) return erro;
 
   try {
-    return Response.json({ usuarios: listarUsuarios() });
+    return Response.json({ usuarios: await listarUsuarios() });
   } catch (e) {
     console.error('GET /api/usuarios', e);
     return Response.json({ erro: 'Falha ao ler as contas' }, { status: 500 });
@@ -66,13 +66,14 @@ export async function POST(req) {
 
   // Checagem amigável antes de tentar gravar; a coluna é UNIQUE de qualquer
   // forma, então o catch abaixo ainda cobre a corrida entre duas criações.
-  if (buscarUsuarioParaLogin(login)) {
+  if (await buscarUsuarioParaLogin(login)) {
     return Response.json({ erro: 'Já existe uma conta com esse usuário.' }, { status: 409 });
   }
 
   try {
     const senhaHash = await criarHash(senha);
-    return Response.json({ ok: true, usuario: criarUsuario({ usuario: login, nome, senhaHash, papel }) }, { status: 201 });
+    const criado = await criarUsuario({ usuario: login, nome, senhaHash, papel });
+    return Response.json({ ok: true, usuario: criado }, { status: 201 });
   } catch (e) {
     if (String(e?.message).includes('UNIQUE')) {
       return Response.json({ erro: 'Já existe uma conta com esse usuário.' }, { status: 409 });

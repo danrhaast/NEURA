@@ -4,7 +4,7 @@ import PainelShows from '@/components/admin/PainelShows';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Shows — Painel NEURA' };
 
-export default function Page() {
-  const { progressoShows } = lerConteudo();
+export default async function Page() {
+  const { progressoShows } = await lerConteudo();
   return <PainelShows inicial={progressoShows} />;
 }

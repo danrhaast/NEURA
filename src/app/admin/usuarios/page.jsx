@@ -22,5 +22,5 @@ export default async function Page() {
     );
   }
 
-  return <PainelUsuarios inicial={listarUsuarios()} euId={usuario.id} />;
+  return <PainelUsuarios inicial={await listarUsuarios()} euId={usuario.id} />;
 }

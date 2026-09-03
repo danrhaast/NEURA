@@ -20,8 +20,8 @@ import RegistrarAcesso  from '@/components/site/RegistrarAcesso';
 
 export const dynamic = 'force-dynamic'; // sempre reflete a última edição do painel
 
-export default function Home() {
-  const { poemas, videos, progressoShows, sobre } = lerConteudo();
+export default async function Home() {
+  const { poemas, videos, progressoShows, sobre } = await lerConteudo();
 
   return (
     <>

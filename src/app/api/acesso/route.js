@@ -12,43 +12,20 @@
 
 import { createHmac } from 'node:crypto';
 
-import { registrarVisita, podarAcessos } from '@/lib/db';
+import { registrarVisita, podarSeVencido, contarTentativa, diaLocal } from '@/lib/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/* Uma visita gravada é uma escrita em disco, e a rota é pública. Sem teto,
-   um laço de fetch enche o banco — que é o mesmo arquivo do conteúdo do site
-   e o que precisa caber no backup. */
+/* Uma visita gravada é uma escrita no banco, e a rota é pública. Sem teto, um
+   laço de fetch enche o Turso — cujo plano gratuito conta escritas e espaço —
+   e ainda suja o gráfico do painel com números inventados. */
 const LIMITE_HORA = 200;
 const JANELA      = 60 * 60 * 1000;
 
-const porVisitante = new Map();
-
-let ultimaPoda = 0;
-const INTERVALO_PODA = 24 * 60 * 60 * 1000;
-
-function excedeu(chave, agora) {
-  if (porVisitante.size > 5000) {
-    for (const [k, reg] of porVisitante) {
-      if (agora - reg.desde > JANELA) porVisitante.delete(k);
-    }
-  }
-
-  const reg = porVisitante.get(chave);
-  if (!reg || agora - reg.desde > JANELA) {
-    porVisitante.set(chave, { n: 1, desde: agora });
-    return false;
-  }
-
-  reg.n += 1;
-  return reg.n > LIMITE_HORA;
-}
-
 function hashVisitante(ip, ua) {
-  const hoje = new Date().toISOString().slice(0, 10);
   const chave = process.env.SESSAO_SEGREDO || 'neura-sem-segredo';
-  return createHmac('sha256', chave).update(`${ip}|${ua}|${hoje}`).digest('hex').slice(0, 32);
+  return createHmac('sha256', chave).update(`${ip}|${ua}|${diaLocal()}`).digest('hex').slice(0, 32);
 }
 
 /* Da URL de origem interessa o domínio: "instagram.com" responde de onde veio
@@ -77,12 +54,7 @@ export async function POST(req) {
     req.headers.get('x-real-ip') ||
     'local';
 
-  const agora = Date.now();
   const visitante = hashVisitante(ip, ua);
-
-  if (excedeu(visitante, agora)) {
-    return Response.json({ ok: true, ignorado: true });
-  }
 
   let corpo = {};
   try {
@@ -97,12 +69,14 @@ export async function POST(req) {
   if (caminho.startsWith('/admin')) return Response.json({ ok: true, ignorado: true });
 
   try {
-    registrarVisita({ caminho, referencia: dominio(corpo.referencia), visitante });
-
-    if (agora - ultimaPoda > INTERVALO_PODA) {
-      ultimaPoda = agora;
-      podarAcessos();
+    if (await contarTentativa(`acesso:${visitante}`, JANELA, LIMITE_HORA)) {
+      return Response.json({ ok: true, ignorado: true });
     }
+
+    await registrarVisita({ caminho, referencia: dominio(corpo.referencia), visitante });
+
+    // Uma vez por dia, e a marca fica no banco — ver podarSeVencido.
+    await podarSeVencido();
   } catch (e) {
     // Métrica nunca deve quebrar a visita de quem está no site.
     console.error('POST /api/acesso', e);

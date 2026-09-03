@@ -60,9 +60,14 @@ function Kpi({ rotulo, valor, apoio }) {
 export default async function Dashboard() {
   const usuario = await sessao();
 
-  const conteudo = lerConteudo();
-  const metricas = lerMetricas(14);
-  const nUsuarios = contarUsuarios();
+  // Três consultas independentes: em paralelo, para o dashboard não somar três
+  // idas de rede ao Turso uma depois da outra.
+  const [conteudo, metricas, nUsuarios] = await Promise.all([
+    lerConteudo(),
+    lerMetricas(14),
+    contarUsuarios(),
+  ]);
+
   const paineis = paineisDe(usuario.papel);
 
   const primeiroNome = (usuario.nome || usuario.usuario).split(' ')[0];

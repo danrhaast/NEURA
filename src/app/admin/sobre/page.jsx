@@ -4,6 +4,6 @@ import PainelSobre from '@/components/admin/PainelSobre';
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Sobre Nós — Painel NEURA' };
 
-export default function Page() {
-  return <PainelSobre inicial={lerSobre()} />;
+export default async function Page() {
+  return <PainelSobre inicial={await lerSobre()} />;
 }

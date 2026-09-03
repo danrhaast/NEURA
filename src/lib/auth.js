@@ -112,7 +112,7 @@ export async function sessao() {
 
   // O token é válido, mas a conta pode ter sido excluída ou ter mudado de
   // papel desde que ele foi emitido. O banco é a fonte da verdade.
-  return buscarUsuarioPorId(uid);
+  return await buscarUsuarioPorId(uid);
 }
 
 /** true se a requisição atual tem sessão válida. */
