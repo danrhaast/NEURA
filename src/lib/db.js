@@ -14,19 +14,70 @@
    Variáveis (.env.local ou painel do Vercel):
      TURSO_DATABASE_URL   file:data/neura.db  ·  libsql://xxx.turso.io
      TURSO_AUTH_TOKEN     só para libsql://
+
+   A integração do Turso no Vercel cria essas duas com um prefixo de recurso
+   (ALGO_TURSO_DATABASE_URL); os dois formatos são aceitos — ver ./turso.js.
    ========================================================================== */
 
 import { createClient } from '@libsql/client';
 import { mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-const URL_BANCO = process.env.TURSO_DATABASE_URL || 'file:data/neura.db';
-const TOKEN     = process.env.TURSO_AUTH_TOKEN;
+/* Relativo, e não pelo alias @/: os scripts de linha de comando importam este
+   arquivo direto pelo node, fora do build do Next, onde o alias não existe. */
+import { credenciaisTurso, noVercel } from './turso.js';
 
-/* Fuso do público do site, em minutos, para o dashboard agrupar as visitas
-   pelo dia de quem está no Brasil. O servidor do Vercel roda em UTC, então
-   sem isto o "hoje" do gráfico viraria às 21h. */
-export const FUSO_MINUTOS = Number(process.env.SITE_FUSO_MINUTOS ?? -180);
+/* A integração do Vercel prefixa as variáveis com o nome do recurso; a
+   resolução está em src/lib/turso.js. */
+const { url: URL_TURSO, token: TOKEN, prefixo } = credenciaisTurso();
+
+const URL_BANCO = URL_TURSO || 'file:data/neura.db';
+
+/* Sem banco remoto no Vercel, o app cairia no arquivo local — que lá é disco
+   efêmero. Isso não daria erro nenhum: o painel gravaria, diria "Publicado no
+   site", e o conteúdo sumiria no cold start seguinte, junto com as contas.
+   Falhar o deploy é muito melhor do que perder o conteúdo em silêncio. */
+if (noVercel() && !URL_TURSO) {
+  throw new Error(
+    'TURSO_DATABASE_URL não encontrada. O Vercel tem disco efêmero e o banco ' +
+    'precisa ficar no Turso. Conecte a integração do Turso ao projeto ou ' +
+    'cadastre TURSO_DATABASE_URL e TURSO_AUTH_TOKEN nas variáveis de ambiente.'
+  );
+}
+
+if (prefixo) {
+  console.log(`Banco lido de ${prefixo}TURSO_DATABASE_URL (prefixo da integração).`);
+}
+
+/* Fuso do público do site, para o dashboard agrupar as visitas pelo dia de
+   quem olha. O servidor do Vercel roda em UTC, então sem isto o "hoje" do
+   gráfico viraria no meio da tarde.
+
+   É o nome IANA da zona, não um deslocamento em minutos: os Estados Unidos
+   têm horário de verão, e um número fixo erraria uma hora durante boa parte
+   do ano — junto com a virada do dia no gráfico. O nome deixa o `Intl`
+   resolver a transição sozinho. */
+const FUSO_PADRAO = 'America/New_York';
+
+function fusoValido(nome) {
+  try {
+    new Intl.DateTimeFormat('en-CA', { timeZone: nome });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export const FUSO = (() => {
+  const escolhido = process.env.SITE_FUSO?.trim();
+  if (!escolhido) return FUSO_PADRAO;
+
+  if (!fusoValido(escolhido)) {
+    console.error(`SITE_FUSO inválido ("${escolhido}"); usando ${FUSO_PADRAO}.`);
+    return FUSO_PADRAO;
+  }
+  return escolhido;
+})();
 
 /* Next recarrega módulos em desenvolvimento, e no serverless cada instância
    sobe do zero; guardar no global evita reabrir a conexão a cada alteração
@@ -509,15 +560,74 @@ export async function zerarTentativa(chave) {
 const DIA = 24 * 60 * 60 * 1000;
 const RETENCAO = 180 * DIA;
 
-/** Meia-noite no fuso do público, em milissegundos. */
-function inicioDoDiaLocal(ms = Date.now()) {
-  const deslocado = ms + FUSO_MINUTOS * 60_000;
-  return deslocado - (deslocado % DIA) - FUSO_MINUTOS * 60_000;
-}
+/* --- datas no fuso do público --------------------------------------------
+   Tudo abaixo existe porque o dia do gráfico é o dia de quem visita o site,
+   não o dia UTC do servidor — e porque esse dia nem sempre tem 24 horas: nas
+   duas viradas do horário de verão ele tem 23 ou 25.
+   -------------------------------------------------------------------------- */
+
+const FORMATO_DIA = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FUSO, year: 'numeric', month: '2-digit', day: '2-digit',
+});
+
+/* hourCycle h23 para a meia-noite sair como 00, e não como 24. */
+const FORMATO_COMPLETO = new Intl.DateTimeFormat('en-CA', {
+  timeZone: FUSO, hourCycle: 'h23',
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit',
+});
 
 /** AAAA-MM-DD no fuso do público. */
 export function diaLocal(ms = Date.now()) {
-  return new Date(ms + FUSO_MINUTOS * 60_000).toISOString().slice(0, 10);
+  return FORMATO_DIA.format(new Date(ms));
+}
+
+/** Quantos minutos o fuso está deslocado do UTC naquele instante. */
+function deslocamento(ms) {
+  const p = Object.fromEntries(
+    FORMATO_COMPLETO.formatToParts(new Date(ms)).map((x) => [x.type, x.value])
+  );
+
+  const comoSeFosseUtc = Date.UTC(
+    Number(p.year), Number(p.month) - 1, Number(p.day),
+    Number(p.hour), Number(p.minute), Number(p.second)
+  );
+
+  return (comoSeFosseUtc - Math.floor(ms / 1000) * 1000) / 60_000;
+}
+
+/**
+ * Meia-noite de um dia AAAA-MM-DD, em milissegundos UTC.
+ *
+ * Duas passadas: a primeira estima o deslocamento pelo palpite em UTC, a
+ * segunda o corrige usando o instante já ajustado. Sem isso, um dia que começa
+ * logo depois da virada do horário de verão sairia uma hora fora.
+ */
+function inicioDoDia(iso) {
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  const palpite = Date.UTC(ano, mes - 1, dia);
+
+  const primeira = palpite - deslocamento(palpite) * 60_000;
+  return palpite - deslocamento(primeira) * 60_000;
+}
+
+/** Meia-noite de hoje no fuso do público. */
+function inicioDoDiaLocal(ms = Date.now()) {
+  return inicioDoDia(diaLocal(ms));
+}
+
+/**
+ * Os últimos `n` dias do calendário, terminando em hoje.
+ *
+ * A conta é feita sobre a data, não sobre o relógio: subtrair 24h por dia
+ * pularia ou repetiria uma data nas semanas em que o horário de verão vira.
+ */
+function ultimosDias(n, agora) {
+  const [ano, mes, dia] = diaLocal(agora).split('-').map(Number);
+  const base = Date.UTC(ano, mes - 1, dia);
+
+  return Array.from({ length: n }, (_, i) =>
+    new Date(base - (n - 1 - i) * DIA).toISOString().slice(0, 10));
 }
 
 export async function registrarVisita({ caminho, referencia, visitante }) {
@@ -566,19 +676,28 @@ export async function lerMetricas(dias = 14) {
   await pronto();
 
   const agora = Date.now();
-  const desde = agora - dias * DIA;
   const inicioHoje = inicioDoDiaLocal(agora);
-  const desloc = FUSO_MINUTOS * 60; // segundos, para o date() do SQLite
+
+  /* O eixo é montado antes da consulta: são estes limites que definem onde
+     cada dia começa. O SQLite não conhece a base de fusos IANA — o `localtime`
+     dele seria o fuso do servidor, que no Vercel é UTC — então quem calcula a
+     virada é o JavaScript, e o SQL só recebe os instantes prontos. */
+  const eixo = ultimosDias(dias, agora);
+  const limites = eixo.map(inicioDoDia);
+  const desde = limites[0];
+
+  // WHEN em < <início do dia seguinte> THEN <índice do dia>
+  const faixas = limites.slice(1).map((_, i) => `WHEN em < ? THEN ${i}`).join(' ');
 
   const [porDia, origens, totais] = await db.batch([
     {
-      sql: `SELECT date((em / 1000) + ?, 'unixepoch') AS dia,
+      sql: `SELECT CASE ${faixas} ELSE ${dias - 1} END AS d,
                    COUNT(*)                  AS visitas,
                    COUNT(DISTINCT visitante) AS visitantes
               FROM acessos
              WHERE em >= ?
-             GROUP BY dia`,
-      args: [desloc, desde],
+             GROUP BY d`,
+      args: [...limites.slice(1), desde],
     },
     {
       sql: `SELECT referencia, COUNT(*) AS n
@@ -602,19 +721,11 @@ export async function lerMetricas(dias = 14) {
     },
   ], 'read');
 
-  // Monta o eixo completo primeiro, para os dias sem visita aparecerem como
-  // zero em vez de sumirem do gráfico.
-  const serie = [];
-  const indice = new Map();
-  for (let i = dias - 1; i >= 0; i--) {
-    const chave = diaLocal(agora - i * DIA);
-    const ponto = { dia: chave, visitas: 0, visitantes: 0 };
-    serie.push(ponto);
-    indice.set(chave, ponto);
-  }
+  // Dias sem visita entram como zero em vez de sumirem do gráfico.
+  const serie = eixo.map((dia) => ({ dia, visitas: 0, visitantes: 0 }));
 
   for (const l of porDia.rows) {
-    const ponto = indice.get(l.dia);
+    const ponto = serie[Number(l.d)];
     if (ponto) {
       ponto.visitas = Number(l.visitas);
       ponto.visitantes = Number(l.visitantes);

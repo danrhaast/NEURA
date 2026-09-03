@@ -15,6 +15,8 @@
 
 import { createClient } from '@libsql/client';
 
+import { credenciaisTurso } from '../src/lib/turso.js';
+
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith('--')));
 
@@ -28,12 +30,16 @@ function sair(msg, codigo = 1) {
   process.exit(codigo);
 }
 
-const ORIGEM  = opcao('--de', 'file:data/neura.db');
-const DESTINO = process.env.TURSO_DATABASE_URL;
-const TOKEN   = process.env.TURSO_AUTH_TOKEN;
+const ORIGEM = opcao('--de', 'file:data/neura.db');
+
+// Aceita também o nome prefixado que a integração do Vercel cria.
+const { url: DESTINO, token: TOKEN, prefixo } = credenciaisTurso();
 
 if (!DESTINO) {
   sair('Defina TURSO_DATABASE_URL no .env.local (o endereço libsql:// do destino).');
+}
+if (prefixo) {
+  console.log(`\n  Destino lido de ${prefixo}TURSO_DATABASE_URL`);
 }
 if (DESTINO === ORIGEM) {
   sair('Origem e destino são o mesmo banco.');

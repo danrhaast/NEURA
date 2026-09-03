@@ -132,6 +132,14 @@ Quem navega com JavaScript desligado não é contado — a visita é avisada pel
 navegador depois que a página carrega, e não durante o render, justamente para
 não contar robô e pré-carregamento.
 
+**Fuso.** O dia do gráfico é o dia de quem visita, não o dia UTC do servidor.
+`SITE_FUSO` guarda o nome IANA da zona (padrão `America/New_York`), e não um
+deslocamento em minutos, porque os Estados Unidos têm horário de verão: um
+número fixo erraria uma hora durante a maior parte do ano. O agrupamento é
+feito por data de calendário, não em blocos de 24 horas — nas duas viradas do
+horário de verão o dia tem 23 ou 25 horas, e a diferença apareceria como um dia
+repetido ou faltando no eixo.
+
 ---
 
 ## Como o conteúdo funciona
@@ -187,7 +195,7 @@ garante que a cópia esteja completa.
    | `TURSO_DATABASE_URL` | `libsql://SEU-BANCO.turso.io` |
    | `TURSO_AUTH_TOKEN` | o token do Turso |
    | `NEXT_PUBLIC_SITE_URL` | só quando houver domínio próprio |
-   | `SITE_FUSO_MINUTOS` | opcional; padrão `-180` (Brasília) |
+   | `SITE_FUSO` | opcional; padrão `America/New_York` |
 
    Sem `NEXT_PUBLIC_SITE_URL` o endereço público é deduzido do domínio de
    produção do próprio Vercel, então OpenGraph, `robots.txt` e `sitemap.xml`
