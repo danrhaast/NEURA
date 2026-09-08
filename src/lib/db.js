@@ -204,14 +204,24 @@ async function preparar() {
      num banco vazio, as duas veriam "0 poemas" e semeariam em paralelo — o
      site abriria com o conteúdo inicial duplicado. Aqui a segunda esbarra na
      PRIMARY KEY, entende que já foi feito e sai. */
+  let semear = true;
   try {
     await db.execute({
       sql: 'INSERT INTO config (chave, valor) VALUES (?, ?)',
       args: [MARCA_SEMEADO, String(Date.now())],
     });
   } catch {
-    return; // outra instância semeou (ou já estava semeado)
+    semear = false; // outra instância semeou (ou já estava semeado)
   }
+
+  /* A primeira conta é conferida SEMPRE, mesmo em banco já semeado. Antes ela
+     morava junto da semeadura, e o resultado era uma armadilha: num banco que
+     já tinha semeado — o que acontece no primeiro acesso à home, antes de
+     qualquer configuração — cadastrar ADMIN_SENHA_HASH depois não fazia nada,
+     sem erro nem aviso. Quem chegasse ali ficava sem como entrar no painel. */
+  await garantirPrimeiraConta();
+
+  if (!semear) return;
 
   /* A marca resolve a corrida entre duas instâncias novas, mas não diz nada
      sobre um banco que já existia antes dela — o de desenvolvimento, por
@@ -245,20 +255,36 @@ async function preparar() {
     });
   }
 
-  /* Primeira conta. Enquanto não houver nenhum usuário, aproveitamos o
-     ADMIN_SENHA_HASH que já estava no ambiente: quem usava o painel antes
-     continua entrando, agora com o login "admin". Sem essa variável nenhuma
-     conta é criada e o login orienta a rodar `npm run usuario`. */
-  const hashLegado = process.env.ADMIN_SENHA_HASH;
-  if (hashLegado && hashLegado.includes(':')) {
-    comandos.push({
-      sql: `INSERT INTO usuarios (usuario, nome, senha_hash, papel, criado_em)
-            VALUES (?, ?, ?, 'dono', ?) ON CONFLICT(usuario) DO NOTHING`,
-      args: ['admin', 'Administrador', hashLegado, Date.now()],
-    });
-  }
-
   await db.batch(comandos, 'write');
+}
+
+/**
+ * Cria a conta "admin" a partir do ADMIN_SENHA_HASH, se o banco não tiver
+ * conta nenhuma.
+ *
+ * É a porta de entrada de um banco de produção onde não dá para rodar a linha
+ * de comando. Roda a cada preparação, não só na semeadura: o banco costuma
+ * nascer semeado no primeiro acesso à home, muito antes de alguém cadastrar a
+ * variável, e amarrar as duas coisas tornava o atalho inútil justamente para
+ * quem precisava dele.
+ *
+ * A condição é "nenhuma conta", nunca "não existe admin": senão, apagar a
+ * conta admin de propósito a faria voltar sozinha no próximo cold start.
+ */
+async function garantirPrimeiraConta() {
+  const hash = process.env.ADMIN_SENHA_HASH;
+  if (!hash || !hash.includes(':')) return;
+
+  const { rows } = await db.execute('SELECT COUNT(*) AS n FROM usuarios');
+  if (Number(rows[0].n) > 0) return;
+
+  await db.execute({
+    sql: `INSERT INTO usuarios (usuario, nome, senha_hash, papel, criado_em)
+          VALUES (?, ?, ?, 'dono', ?) ON CONFLICT(usuario) DO NOTHING`,
+    args: ['admin', 'Administrador', hash, Date.now()],
+  });
+
+  console.log('Conta "admin" criada a partir de ADMIN_SENHA_HASH.');
 }
 
 let preparacao = null;

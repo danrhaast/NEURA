@@ -12,8 +12,8 @@
     "start": "next start",
     "lint": "eslint .",
     "senha": "node scripts/gerar-senha.mjs",
-    "usuario": "node --env-file-if-exists=.env.local scripts/usuario.mjs",
-    "migrar": "node --env-file-if-exists=.env.local scripts/migrar.mjs"
+    "usuario": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/usuario.mjs",
+    "migrar": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrar.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
