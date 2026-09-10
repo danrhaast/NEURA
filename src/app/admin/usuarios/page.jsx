@@ -8,6 +8,9 @@ export const metadata = { title: 'Usuários — Painel NEURA' };
 export default async function Page() {
   const usuario = await sessao();
 
+  // A página roda em paralelo ao layout, então chega aqui mesmo sem login.
+  if (!usuario) return null;
+
   /* O menu já não mostra esta entrada para um editor, mas quem digita a URL
      precisa esbarrar em alguma coisa. A trava que importa está na API — esta
      aqui só evita entregar a lista de contas ao navegador. */

@@ -42,7 +42,7 @@ hash. Para escolher a senha você mesmo: `npm run usuario -- criar admin MinhaSe
 Então:
 
 ```bash
-npm run dev              # http://localhost:3000  ·  painel em /admin
+npm run dev              # http://localhost:9000  ·  painel em /admin
 ```
 
 ## Scripts

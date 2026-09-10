@@ -27,7 +27,9 @@ function escolher() {
   const deploy = process.env.VERCEL_URL;
   if (deploy) return `https://${deploy}`;
 
-  return 'http://localhost:3000';
+  // A porta do `npm run dev`. Não é a 3000 porque ela pertence ao
+  // bot-mercadolivre, e a ExtensionSellerion consulta essa porta sem parar.
+  return 'http://localhost:9000';
 }
 
 /** Endereço público, sempre sem barra no fim. */

@@ -60,6 +60,12 @@ function Kpi({ rotulo, valor, apoio }) {
 export default async function Dashboard() {
   const usuario = await sessao();
 
+  /* O layout já troca a tela pelo login quando não há sessão, mas no App
+     Router a página roda em paralelo a ele, e não depois. Sem esta volta
+     antecipada, cada visitante anônimo disparava as três consultas abaixo e
+     derrubava a renderização em `usuario.papel`. */
+  if (!usuario) return null;
+
   // Três consultas independentes: em paralelo, para o dashboard não somar três
   // idas de rede ao Turso uma depois da outra.
   const [conteudo, metricas, nUsuarios] = await Promise.all([
