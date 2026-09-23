@@ -72,24 +72,6 @@ export default function Nav() {
           </ul>
         </nav>
 
-        <div className="nav__right">
-          <a href="#redes" className="n-avatar" aria-label="Perfil / redes">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <circle cx="12" cy="8" r="4" />
-              <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7z" />
-            </svg>
-          </a>
-
-          <button
-            className={'nav__toggle' + (aberto ? ' is-open' : '')}
-            aria-label={aberto ? 'Fechar menu' : 'Abrir menu'}
-            aria-expanded={aberto}
-            aria-controls="menu"
-            onClick={() => setAberto((v) => !v)}
-          >
-            <span /><span /><span />
-          </button>
-        </div>
 
       </div>
     </header>
